@@ -1,0 +1,57 @@
+[project]
+name = "bia-ro-crate"
+version = "0.1.0"
+description = "Package containing the data models describing,  parsing and validating the ro-crate profile for BIA submissions, as well as additional data structures, such as file lists."
+authors = [
+    {name = "Francois Sherwood", email = "fsherwood@ebi.ac.uk"}, {name = "Cesare", email = "cesare@ebi.ac.uk"}
+]
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "pydantic (>=2.12.5,<3.0.0)",
+    "rdflib (>=7.6.0,<8.0.0)",
+    "pyld (>=2.0.4,<3.0.0)",
+    "roc-validator (>=0.8.1,<0.9.0)",
+    "pandas (>=3.0.2,<4.0.0)",
+    "typer (>=0.24.1,<0.25.0)",
+    "rich (>=13.9,<14.0)"
+]
+
+
+[tool.ruff]
+target-version = "py313"
+
+[project.scripts]
+bia-ro-crate = "cli:bia_ro_crate"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+test = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-check (>=2.8.0,<3.0.0)",
+]
+dev = [
+    "black (>=26.3.1,<27.0.0)",
+    "ruff (>=0.15.8,<0.16.0)",
+    "isort (>=8.0.1,<9.0.0)",
+    "commitizen (>=4.13.9,<5.0.0)"
+]
+
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:rdflib",
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "pep621"
+version_files = [
+    "pyproject.toml:version"
+]
+update_changelog_on_bump = true
+major_version_zero = true
