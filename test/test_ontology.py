@@ -1,6 +1,6 @@
 import pytest
 import pytest_check as check
-from models.linked_data.ontology_terms import (
+from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
     DARWINCORE,

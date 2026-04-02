@@ -3,11 +3,11 @@ from operator import attrgetter
 from pathlib import Path
 from typing import Iterable
 
-from models.linked_data.ld_context.SimpleJSONLDContext import (
+from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
-from models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
-from models.ro_crate_models import FileList
+from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models.ro_crate_models import FileList
 from rdflib import Graph
 
 

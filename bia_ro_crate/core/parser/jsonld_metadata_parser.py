@@ -3,23 +3,23 @@ from pathlib import Path
 
 import pydantic
 import pyld
-from models.linked_data.ld_context import (
+from bia_ro_crate.models.linked_data.ld_context import (
     ContextTerm,
     SimpleJSONLDContext,
 )
-from models.linked_data.ontology_terms import DUBLINCORE
-from models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
-from models.ro_crate_generator_utils import (
+from bia_ro_crate.models.linked_data.ontology_terms import DUBLINCORE
+from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models.ro_crate_generator_utils import (
     generate_standard_bia_context,
     get_all_ro_crate_classes,
 )
 from pydantic_core import ErrorDetails
 from rdflib import RDF, Graph, URIRef
-from bia_ro_crate.bia_ro_crate_metadata import BIAROCrateMetadata
-from bia_ro_crate.parser.ro_crate_metadata_parser import (
+from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
+from bia_ro_crate.core.parser.ro_crate_metadata_parser import (
     ROCrateMetadataParser,
 )
-from bia_ro_crate.validation import Severity, ValidationError
+from bia_ro_crate.core.validation import Severity, ValidationError
 from rocrate_validator import models, services
 
 

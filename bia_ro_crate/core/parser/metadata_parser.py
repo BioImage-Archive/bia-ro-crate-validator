@@ -1,4 +1,4 @@
-from bia_ro_crate.parser.base_parser import Parser
+from bia_ro_crate.core.parser.base_parser import Parser
 
 
 class MetadataParser[ParsedType](Parser[ParsedType]):

@@ -1,10 +1,10 @@
 import re
 
 import pandas as pd
-from models.linked_data.ontology_terms import BIA
-from models.ro_crate_models import Column
-from bia_ro_crate.bia_ro_crate_metadata import BIAROCrateMetadata
-from bia_ro_crate.parser.file_list_parser import FileListParser
+from bia_ro_crate.models.linked_data.ontology_terms import BIA
+from bia_ro_crate.models.ro_crate_models import Column
+from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
+from bia_ro_crate.core.parser.file_list_parser import FileListParser
 
 
 class OSVMetadataParser(FileListParser):

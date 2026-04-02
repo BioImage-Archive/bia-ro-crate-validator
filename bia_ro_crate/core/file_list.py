@@ -1,5 +1,5 @@
 import pandas as pd
-from models.ro_crate_models import Column
+from bia_ro_crate.models.ro_crate_models import Column
 
 
 class FileList:

@@ -1,10 +1,10 @@
 import inspect
 
-from models import ro_crate_models
-from models.linked_data.ld_context.SimpleJSONLDContext import (
+from bia_ro_crate.models import ro_crate_models
+from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
-from models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
 from rdflib import URIRef
 
 
@@ -39,7 +39,7 @@ def get_all_ro_crate_classes() -> dict[URIRef, type[ROCrateModel]]:
             ro_crate_models,
             lambda member: (
                 inspect.isclass(member)
-                and member.__module__ == "models.ro_crate_models"
+                and member.__module__ == "bia_ro_crate.models.ro_crate_models"
                 and issubclass(member, ROCrateModel)
             ),
         )

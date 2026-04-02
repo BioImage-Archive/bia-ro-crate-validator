@@ -2,13 +2,13 @@ from pathlib import Path
 from urllib.parse import quote, unquote
 
 import pandas as pd
-from models import ro_crate_models
-from models.linked_data.ontology_terms import BIA, SCHEMA
-from models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models import ro_crate_models
+from bia_ro_crate.models.linked_data.ontology_terms import BIA, SCHEMA
+from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
 from rdflib import RDF, URIRef
-from bia_ro_crate.bia_ro_crate_metadata import BIAROCrateMetadata
-from bia_ro_crate.file_list import FileList
-from bia_ro_crate.parser.metadata_parser import MetadataParser
+from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
+from bia_ro_crate.core.file_list import FileList
+from bia_ro_crate.core.parser.metadata_parser import MetadataParser
 
 from ..validation import Severity, ValidationError
 

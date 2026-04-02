@@ -5,7 +5,7 @@ from typing import Annotated
 import typer
 from rich.logging import RichHandler
 
-from validator.validation import bia_roc_validation
+from bia_ro_crate.validator import bia_roc_validation
 
 bia_ro_crate = typer.Typer(name="bia-ro-crate", context_settings={"help_option_names": ["-h", "--help"]})
 

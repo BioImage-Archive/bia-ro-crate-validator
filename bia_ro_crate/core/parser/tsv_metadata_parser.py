@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pandas as pd
-from bia_ro_crate.file_list import FileList
-from bia_ro_crate.parser.osv_metadata_parser import OSVMetadataParser
+from bia_ro_crate.core.file_list import FileList
+from bia_ro_crate.core.parser.osv_metadata_parser import OSVMetadataParser
 
 
 class TSVMetadataParser(OSVMetadataParser):

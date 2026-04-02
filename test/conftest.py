@@ -10,6 +10,7 @@ def bia_ontology():
     bia_ontology.parse(
         str(
             Path(__file__).parents[1]
+            / "bia_ro_crate"
             / "models"
             / "linked_data"
             / "bia_ontology.ttl"

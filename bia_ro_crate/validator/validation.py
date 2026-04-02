@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from bia_ro_crate.parser import JSONLDMetadataParser, TSVMetadataParser
+from bia_ro_crate.core.parser import JSONLDMetadataParser, TSVMetadataParser
 
 logger = logging.getLogger("__main__." + __name__)
 logging.getLogger().setLevel(logging.INFO)

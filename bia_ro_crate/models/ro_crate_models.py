@@ -1,13 +1,13 @@
-from models.linked_data.ontology_terms import (
+from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
     DARWINCORE,
     DUBLINCORE,
     SCHEMA,
 )
-from models.linked_data.pydantic_ld.FieldContext import FieldContext
-from models.linked_data.pydantic_ld.LDModel import ObjectReference
-from models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
+from bia_ro_crate.models.linked_data.pydantic_ld.LDModel import ObjectReference
+from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
 from rdflib import RDFS
 from typing_extensions import Annotated, Optional
