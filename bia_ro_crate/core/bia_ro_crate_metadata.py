@@ -76,6 +76,25 @@ class BIAROCrateMetadata:
 
     def get_object(self, id: str) -> ROCrateModel | None:
         return self._graph_bia_entities.get(id)
+    
+    def add_entity(self, entity: ROCrateModel) -> None:
+        if entity.id in self._graph_bia_entities:
+            raise ValueError(f"Entity with id {entity.id} already exists.")
+        self._graph_bia_entities[entity.id] = entity
+
+    def add_entity_if_absent(self, entity: ROCrateModel) -> None:
+        """
+        Add an entity to the graph only if no entity with the same @id already
+        exists. Intended for reference entities (e.g. Taxon) that may be shared
+        across multiple parent entities in the same config.
+        """
+        if entity.id not in self._graph_bia_entities:
+            self._graph_bia_entities[entity.id] = entity
+
+    def update_entity(self, entity: ROCrateModel) -> None:
+        if entity.id not in self._graph_bia_entities:
+            raise ValueError(f"Entity with id {entity.id} not found.")
+        self._graph_bia_entities[entity.id] = entity
 
     def get_base_path(self) -> Path:
         return self._base_path

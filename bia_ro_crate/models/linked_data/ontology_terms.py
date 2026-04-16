@@ -129,6 +129,8 @@ class BIA(DefinedNamespace):
     inputImage: URIRef
     intrinsicVariableDescription: URIRef
     protocol: URIRef
+    publicationYear: URIRef
+    pubmedId: URIRef
     relatedPublication: URIRef
     resultOf: URIRef
     role: URIRef

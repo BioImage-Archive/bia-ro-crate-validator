@@ -45,12 +45,11 @@ class Study(ROCrateModel):
         FieldContext(SCHEMA.hasPart, is_id_field=True),
     ] = Field()
     accessionId: Annotated[str, FieldContext(SCHEMA.identifier)] = Field()
-    seeAlso: Annotated[list[ObjectReference], FieldContext(RDFS.seeAlso)] = Field(
-        default_factory=list
-    )
-    relatedPublication: Annotated[list[str], FieldContext(BIA.relatedPublication)] = (
-        Field(default_factory=list)
-    )
+    seeAlso: Annotated[list[ObjectReference], FieldContext(RDFS.seeAlso)] = Field(default_factory=list)
+    relatedPublication: Annotated[
+        list[ObjectReference],
+        FieldContext(BIA.relatedPublication, is_id_field=True),
+    ] = Field(default_factory=list)
 
     model_config = ConfigDict(model_type=BIA.Study)
 
@@ -63,8 +62,11 @@ class Study(ROCrateModel):
 
 
 class Publication(ROCrateModel):
-    title: Annotated[str, FieldContext(SCHEMA.name)] = Field()
-    authorNames: Annotated[str, FieldContext(BIA.authorNames)] = Field()
+    title: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
+    authorNames: Annotated[Optional[str], FieldContext(BIA.authorNames)] = Field(default=None)
+    publicationYear: Annotated[Optional[int], FieldContext(BIA.publicationYear)] = Field(default=None)
+    pubmedId: Annotated[Optional[str], FieldContext(BIA.pubmedId)] = Field(default=None)
+    doi: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(default=None)
 
     model_config = ConfigDict(model_type=BIA.Publication)
 

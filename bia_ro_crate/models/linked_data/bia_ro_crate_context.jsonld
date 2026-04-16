@@ -99,6 +99,9 @@
     "displayName": {
       "@id": "schema:name"
     },
+    "doi": {
+      "@id": "schema:identifier"
+    },
     "experimentalVariableDescription": {
       "@id": "bia:experimentalVariableDescription"
     },
@@ -170,6 +173,12 @@
     },
     "protocolDescription": {
       "@id": "schema:description"
+    },
+    "publicationYear": {
+      "@id": "bia:publicationYear"
+    },
+    "pubmedId": {
+      "@id": "bia:pubmedId"
     },
     "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
     "relatedPublication": {

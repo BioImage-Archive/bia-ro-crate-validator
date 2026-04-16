@@ -23,7 +23,7 @@ bia:Study a owl:Class ;
 
 bia:Publication a owl:Class ;
     rdfs:label "publication"@en ;
-    rdfs:subclassOf schema:CreativeWork ;
+    rdfs:subClassOf schema:CreativeWork ;
     rdfs:comment "A published paper or written work."@en .
 
 # Properties
@@ -54,16 +54,17 @@ bia:authorNames a owl:DatatypeProperty ;
     rdfs:domain bia:Publication ;
     rdfs:range xsd:string .
 
-bia:seeAlso a owl:ObjectProperty ;
-    rdfs:label "see also"@en ;
-    rdfs:comment "A link to an external resource alongside a description of the connection between the subject item and the link."@en ;
-    rdfs:range bia:ExternalReference .
+bia:publicationYear a owl:DatatypeProperty ;
+    rdfs:label "publication year"@en ;
+    rdfs:comment "The year in which the publication was first published."@en ;
+    rdfs:domain bia:Publication ;
+    rdfs:range xsd:integer .
 
-bia:relatedPublication a owl:ObjectProperty ;
-    rdfs:label "related publication"@en ;
-    rdfs:comment """A publication that is of some relevance to the subject."""@en ;
-    rdfs:subPropertyOf schema:citation ;
-    rdfs:range bia:Publication .
+bia:pubmedId a owl:DatatypeProperty ;
+    rdfs:label "pubmed id"@en ;
+    rdfs:comment "The identifier of the publication in the PubMed database."@en ;
+    rdfs:domain bia:Publication ;
+    rdfs:range xsd:string .
 
 bia:fundingStatement a owl:DatatypeProperty ;
     rdfs:label "funding statement"@en ;
@@ -79,6 +80,17 @@ bia:acknowledgement a owl:DatatypeProperty;
     rdfs:domain bia:Study ;
     rdfs:range rdf:langString .
 
+
+bia:seeAlso a owl:ObjectProperty ;
+    rdfs:label "see also"@en ;
+    rdfs:comment "A link to an external resource alongside a description of the connection between the subject item and the link."@en ;
+    rdfs:range bia:ExternalReference .
+
+bia:relatedPublication a owl:ObjectProperty ;
+    rdfs:label "related publication"@en ;
+    rdfs:comment """A publication that is of some relevance to the subject."""@en ;
+    rdfs:subPropertyOf schema:citation ;
+    rdfs:range bia:Publication .
 
 bia:exemplarImage a owl:ObjectProperty;
     rdfs:label "exemplar image"@en ;
