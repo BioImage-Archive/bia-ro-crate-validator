@@ -19,7 +19,8 @@ from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
 from bia_ro_crate.core.parser.ro_crate_metadata_parser import (
     ROCrateMetadataParser,
 )
-from bia_ro_crate.core.validation import Severity, ValidationError
+from bia_ro_crate.core.validation.severity import Severity
+from bia_ro_crate.core.validation.validation_error import ValidationError
 from rocrate_validator import models, services
 
 
@@ -43,7 +44,7 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
 
         super().__init__(ro_crate_root=ro_crate_root, context=context)
 
-    def parse(self, target: str | None = None):
+    def parse(self, target: Path | str | None = None) -> None:
         if target is None:
             target = self.DEFAULT_RO_CRATE_FILENAME
         crate_metadata_path = self._get_metadata_path(target)
@@ -126,7 +127,7 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         self._raise_errors()
         return rocrate_objects_by_id
 
-    def _get_metadata_path(self, target: Path | str | None):
+    def _get_metadata_path(self, target: Path | str | None) -> Path:
         if target:
             return self._ro_crate_root / target
         else:
@@ -186,7 +187,7 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         self._raise_errors()
         return SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
 
-    def _pre_parse_validation(self, ro_crate_metadata_path):
+    def _pre_parse_validation(self, ro_crate_metadata_path: Path) -> None:
         self._id_reference_validation(ro_crate_metadata_path)
         self._base_ro_crate_validation(ro_crate_metadata_path)
         self._raise_errors()
@@ -224,16 +225,20 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         uri_referenced_object -= type_objects
         uri_referenced_object -= profiles
         undefined_references = uri_referenced_object - subjects
-        unconnected_subjects = subjects - uri_referenced_object
+        inboundless_subjects = subjects - uri_referenced_object
 
-        if URIRef(self.DEFAULT_RO_CRATE_FILENAME) in unconnected_subjects:
-            unconnected_subjects.remove(URIRef(self.DEFAULT_RO_CRATE_FILENAME))
+        metadata_uri = URIRef(ro_crate_metadata_path.resolve().as_uri())
+        if metadata_uri in inboundless_subjects:
+            inboundless_subjects.remove(metadata_uri)
 
-        if len(unconnected_subjects) > 0:
+        if len(inboundless_subjects) > 0:
             self._parse_issues.append(
                 ValidationError(
-                    message=f"Found object not connected to the {self.DEFAULT_RO_CRATE_FILENAME} object: {', '.join(str(unconnected_subjects))}",
-                    severity=Severity.WARNING,
+                    message=(
+                        "Found objects in ro-crate-metadata.json with no inbound "
+                        f"references: {', '.join(sorted(str(subject) for subject in inboundless_subjects))}"
+                    ),
+                    severity=Severity.INFO,
                 )
             )
 

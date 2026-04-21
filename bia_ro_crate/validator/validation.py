@@ -1,31 +1,36 @@
 import logging
 from pathlib import Path
 
-from bia_ro_crate.core.parser import JSONLDMetadataParser, TSVMetadataParser
+from bia_ro_crate.core.parser.ro_crate_parser import ROCrateParser
+from bia_ro_crate.core.validation.severity import Severity
 
 logger = logging.getLogger("__main__." + __name__)
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger("rdflib").setLevel(logging.ERROR)
 
 
+def _log_non_fatal_issues(parser: ROCrateParser) -> None:
+    logger_by_severity = {
+        Severity.WARNING: logger.warning,
+        Severity.INFO: logger.info,
+        Severity.DEBUG: logger.debug,
+    }
+
+    for issue in parser.issues:
+        log_fn = logger_by_severity.get(issue.severity)
+        if log_fn is not None:
+            log_fn(issue.format_message())
+
+
 def bia_roc_validation(ro_crate_directory: Path):
-
-    roc_metadata = None
+    ro_crate_parser = ROCrateParser(ro_crate_directory)
     try:
-        roc_metadata_parser = JSONLDMetadataParser(ro_crate_directory)
-        roc_metadata_parser.parse()
-        roc_metadata = roc_metadata_parser.result
+        ro_crate_parser.parse()
+        ro_crate_parser.result
     except ExceptionGroup as validationExceptionGroup:
+        _log_non_fatal_issues(ro_crate_parser)
         for exception in validationExceptionGroup.exceptions:
             logger.error(exception)
-        exit(1)
+        raise SystemExit(1)
 
-
-    try:
-        file_list_parser = TSVMetadataParser(roc_metadata)
-        file_list_parser.parse()
-        file_list_parser.result
-    except ExceptionGroup as validationExceptionGroup:
-        for exception in validationExceptionGroup.exceptions:
-            logger.error(exception)
-        exit(1)
+    _log_non_fatal_issues(ro_crate_parser)

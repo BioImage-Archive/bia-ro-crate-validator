@@ -1,6 +1,6 @@
 from rdflib import URIRef
 
-from ..ld_context.ContextTerm import ContextTerm
+from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 
 
 class FieldContext:

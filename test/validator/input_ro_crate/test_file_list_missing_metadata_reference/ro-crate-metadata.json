@@ -1,0 +1,328 @@
+{
+  "@context": [
+    "https://w3id.org/ro/crate/1.1/context",
+    {
+      "accessionId": {
+        "@id": "schema:identifier"
+      },
+      "acknowledgement": {
+        "@id": "bia:acknowledgement"
+      },
+      "address": {
+        "@id": "schema:address"
+      },
+      "affiliation": {
+        "@id": "schema:memberOf"
+      },
+      "annotationCoverage": {
+        "@id": "bia:annotationCoverage"
+      },
+      "annotationCriteria": {
+        "@id": "bia:annotationCriteria"
+      },
+      "annotationMethod": {
+        "@id": "bia:annotationMethod"
+      },
+      "annotationSourceIndicator": {
+        "@id": "bia:annotationSourceIndicator"
+      },
+      "associatedAnnotationMethod": {
+        "@id": "bia:associatedAnnotationMethod"
+      },
+      "associatedBiologicalEntity": {
+        "@id": "bia:associatedBiologicalEntity"
+      },
+      "associatedCreationProcess": {
+        "@id": "bia:associatedCreationProcess"
+      },
+      "associatedImageAcquisitionProtocol": {
+        "@id": "bia:associatedImageAcquisitionProtocol"
+      },
+      "associatedImageAnalysisMethod": {
+        "@id": "bia:associatedAnalysisMethod"
+      },
+      "associatedImageCorrelationMethod": {
+        "@id": "bia:associatedCorrelationMethod"
+      },
+      "associatedProtocol": {
+        "@id": "bia:associatedProtocol"
+      },
+      "associatedSourceImage": {
+        "@id": "bia:associatedSourceImage"
+      },
+      "associatedSpecimen": {
+        "@id": "bia:associatedSubject"
+      },
+      "associatedSpecimenImagingPreparationProtocol": {
+        "@id": "bia:associatedImagingPreparationProtocol"
+      },
+      "authorNames": {
+        "@id": "bia:authorNames"
+      },
+      "bia": "http://bia/",
+      "biologicalEntity": {
+        "@id": "bia:sampleOf"
+      },
+      "biologicalEntityDescription": {
+        "@id": "bia:biologicalEntityDescription"
+      },
+      "channelBiologicalEntity": {
+        "@id": "bia:channelBiologicalEntity"
+      },
+      "channelContentDescription": {
+        "@id": "bia:channelContentDescription"
+      },
+      "channelLabel": {
+        "@id": "dc:identifier"
+      },
+      "column": {
+        "@id": "csvw:column"
+      },
+      "columnName": {
+        "@id": "csvw:name"
+      },
+      "commonName": {
+        "@id": "http://rs.tdwg.org/dwc/terms/vernacularName"
+      },
+      "contactEmail": {
+        "@id": "schema:email"
+      },
+      "contributor": {
+        "@id": "schema:author"
+      },
+      "csvw": "http://www.w3.org/ns/csvw#",
+      "datePublished": {
+        "@id": "schema:datePublished"
+      },
+      "dc": "http://purl.org/dc/terms/",
+      "description": {
+        "@id": "schema:description"
+      },
+      "displayName": {
+        "@id": "schema:name"
+      },
+      "experimentalVariableDescription": {
+        "@id": "bia:experimentalVariableDescription"
+      },
+      "extrinsicVariableDescription": {
+        "@id": "bia:extrinsicVariableDescription"
+      },
+      "fbbiId": {
+        "@id": "bia:fbbiId"
+      },
+      "featuresAnalysed": {
+        "@id": "bia:featuresAnalysed"
+      },
+      "fiducialsUsed": {
+        "@id": "bia:fiducialsUsed"
+      },
+      "growthProtocol": {
+        "@id": "bia:growthProtocol"
+      },
+      "hasPart": {
+        "@id": "schema:hasPart"
+      },
+      "imageAcquisitionProtocol": {
+        "@id": "bia:imageAcquisitionProtocol"
+      },
+      "imagingInstrumentDescription": {
+        "@id": "bia:imagingInstrumentDescription"
+      },
+      "imagingMethodName": {
+        "@id": "bia:imagingMethodName"
+      },
+      "imagingPreparationProtocol": {
+        "@id": "bia:imagingPreparationProtocol"
+      },
+      "inputImage": {
+        "@id": "bia:inputImage"
+      },
+      "intrinsicVariableDescription": {
+        "@id": "bia:intrinsicVariableDescription"
+      },
+      "keyword": {
+        "@id": "schema:keywords"
+      },
+      "label": {
+        "@id": "schema:name"
+      },
+      "license": {
+        "@id": "schema:license"
+      },
+      "link": {
+        "@id": "schema:url"
+      },
+      "linkDescription": {
+        "@id": "schema:description"
+      },
+      "methodType": {
+        "@id": "bia:annotationMethodType"
+      },
+      "name": {
+        "@id": "schema:name"
+      },
+      "organismClassification": {
+        "@id": "schema:taxonomicRange"
+      },
+      "propertyUrl": {
+        "@id": "csvw:propertyUrl"
+      },
+      "protocol": {
+        "@id": "bia:protocol"
+      },
+      "protocolDescription": {
+        "@id": "schema:description"
+      },
+      "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "resultOf": {
+        "@id": "bia:resultOf"
+      },
+      "role": {
+        "@id": "bia:role"
+      },
+      "schema": "http://schema.org/",
+      "scientificName": {
+        "@id": "http://rs.tdwg.org/dwc/terms/scientificName"
+      },
+      "signalChannelInformation": {
+        "@id": "bia:signalChannelInformation"
+      },
+      "signalContrastMechanismDescription": {
+        "@id": "bia:signalContrastMechanismDescription"
+      },
+      "spatialInformation": {
+        "@id": "bia:spatialInformation"
+      },
+      "subject": {
+        "@id": "bia:subject"
+      },
+      "tableSchema": {
+        "@id": "csvw:tableSchema"
+      },
+      "title": {
+        "@id": "schema:name"
+      },
+      "transformationDescription": {
+        "@id": "bia:transformationDescription"
+      },
+      "transformationMatrix": {
+        "@id": "bia:transformationMatrix"
+      },
+      "website": {
+        "@id": "bia:website"
+      }
+    }
+  ],
+  "@graph": [
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "about": {
+        "@id": "./"
+      }
+    },
+    {
+      "@id": "./",
+      "@type": [
+        "Dataset",
+        "bia:Study"
+      ],
+      "name": "Test file list missing metadata reference",
+      "description": "test description",
+      "contributor": [
+        {
+          "@id": "https://orcid.org/9999-0001-2222-3333"
+        }
+      ],
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "datePublished": "2023-09-05",
+      "keyword": [],
+      "acknowledgement": null,
+      "hasPart": [
+        {
+          "@id": "file_list.tsv"
+        },
+        {
+          "@id": "#dataset"
+        }
+      ],
+      "accessionId": "test_file_list_missing_metadata_reference"
+    },
+    {
+      "@id": "https://orcid.org/9999-0001-2222-3333",
+      "@type": [
+        "Person",
+        "bia:Contributor"
+      ],
+      "displayName": "Test Author",
+      "address": null,
+      "website": null,
+      "affiliation": [],
+      "role": [],
+      "contactEmail": null
+    },
+    {
+      "@id": "#dataset",
+      "@type": [
+        "bia:Dataset"
+      ],
+      "name": "dataset 1",
+      "description": "test description"
+    },
+    {
+      "@id": "file_list.tsv",
+      "@type": [
+        "File",
+        "bia:FileList",
+        "csvw:Table"
+      ],
+      "tableSchema": {
+        "@id": "#ts0"
+      }
+    },
+    {
+      "@id": "#col0",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "file_path",
+      "propertyUrl": "http://bia/filePath"
+    },
+    {
+      "@id": "#col1",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "dataset",
+      "propertyUrl": "http://schema.org/isPartOf"
+    },
+    {
+      "@id": "#col2",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "specimen",
+      "propertyUrl": "http://bia/associatedSubject"
+    },
+    {
+      "@id": "#ts0",
+      "@type": [
+        "csvw:Schema"
+      ],
+      "column": [
+        {
+          "@id": "#col0"
+        },
+        {
+          "@id": "#col1"
+        },
+        {
+          "@id": "#col2"
+        }
+      ]
+    }
+  ]
+}

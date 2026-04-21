@@ -6,7 +6,7 @@ from bia_ro_crate.core.parser.osv_metadata_parser import OSVMetadataParser
 
 
 class TSVMetadataParser(OSVMetadataParser):
-    def parse(self, target: Path | str | None = None):
+    def parse(self, target: Path | str | None = None) -> None:
         self._set_file_list_path_and_id(target)
 
         columns = self._get_schema()

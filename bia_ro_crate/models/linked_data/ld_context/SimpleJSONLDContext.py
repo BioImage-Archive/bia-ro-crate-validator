@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from .ContextTerm import ContextTerm
+from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 
 
 class SimpleJSONLDContext:

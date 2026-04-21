@@ -5,8 +5,8 @@ from pydantic import AfterValidator, BaseModel, Field
 from rdflib import OWL, RDF
 from rdflib.graph import Graph
 
-from .FieldContext import FieldContext
-from .utils import id_validate
+from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
+from bia_ro_crate.models.linked_data.pydantic_ld.utils import id_validate
 
 
 class ObjectReference(BaseModel):

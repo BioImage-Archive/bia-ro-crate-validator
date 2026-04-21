@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from .severity import Severity
+from bia_ro_crate.core.validation.severity import Severity
 
 
 @dataclass

@@ -5,9 +5,11 @@ from typing import Annotated, Union
 from pydantic import AfterValidator, Field, field_validator
 from rdflib import Graph, URIRef
 
-from ..ld_context.SimpleJSONLDContext import SimpleJSONLDContext
-from .LDModel import LDModel
-from .utils import id_validate
+from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
+    SimpleJSONLDContext,
+)
+from bia_ro_crate.models.linked_data.pydantic_ld.LDModel import LDModel
+from bia_ro_crate.models.linked_data.pydantic_ld.utils import id_validate
 
 
 class ROCrateModel(LDModel):
