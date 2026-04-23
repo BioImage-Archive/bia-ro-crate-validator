@@ -63,3 +63,6 @@ class ROCrateModel(LDModel):
         graph.parse(data=json_ld_string, format="json-ld", publicID=f"{base_file_uri}")
 
         return graph
+
+    def __hash__(self):
+        return hash(self.id)
