@@ -1,0 +1,7 @@
+file_path	size_in_bytes	dataset	type	label	source_image_label	associated_specimen	associated_annotation_method	associated_protocol
+data/particle_lists/TS_026_cyto_ribosomes.csv	12	#Annotation%20Dataset	http://bia/AnnotationData	TS_026 ribosome annotations defocus data	TS_026 tomogram		#Annotation%20Method	
+data/tomograms/TS_026.rec	12	#Imaging%20Dataset	http://bia/Image	TS_026 tomogram	TS 026 tilt series			
+data/metadata/TS_026.st	12	#Imaging%20Dataset	http://bia/Image	TS 026 tilt series	['TS_026_001_-0.0', 'TS_026_002_2.0', 'TS_026_003_-2.0']			
+data/frames/TS_026_001_-0.0.tif	12	#Imaging%20Dataset	http://bia/Image	TS_026_001_-0.0				
+data/frames/TS_026_002_2.0.tif	12	#Imaging%20Dataset	http://bia/Image	TS_026_002_2.0				
+data/frames/TS_026_003_-2.0.tif	12	#Imaging%20Dataset	http://bia/Image	TS_026_003_-2.0				
