@@ -77,14 +77,14 @@ class FileListParser(MetadataParser[FileList]):
         }
 
         required_properties = {BIA.filePath, SCHEMA.isPartOf}
-        column_by_property = {}
+        column_id_by_property = {}
 
         for column_id, column in columns.items():
             if column.propertyUrl:
-                column_by_property[URIRef(column.propertyUrl)] = column_id
+                column_id_by_property[URIRef(column.propertyUrl)] = column_id
 
         for required_property in required_properties:
-            if required_property not in column_by_property:
+            if required_property not in column_id_by_property:
                 self._parse_issues.append(
                     ValidationError(
                         severity=Severity.ERROR,
@@ -94,7 +94,7 @@ class FileListParser(MetadataParser[FileList]):
                 )
 
         self._raise_errors()
-        self._file_path_column_id = column_by_property[BIA.filePath]
+        self._file_path_column_id = column_id_by_property[BIA.filePath]
         return columns
 
     def _validate_reference_columns(
@@ -196,6 +196,18 @@ class FileListParser(MetadataParser[FileList]):
         )
 
         self._parse_issues += errors.dropna().to_list()
+
+    def _validate_unique_file_paths(self, data: pd.DataFrame, columns: dict[str, ro_crate_models.Column]):
+       file_path_column_name = columns[self._file_path_column_id].columnName
+       if not data[file_path_column_name].is_unique:
+            self._parse_issues.append(
+                ValidationError(
+                    severity=Severity.ERROR,
+                    message="File list contains multiple references to the same file path.",
+                )
+            )
+
+        
 
     @staticmethod
     def _check_row_reference_and_type_against_roc_metadata(

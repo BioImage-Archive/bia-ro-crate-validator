@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Annotated
-
+import json
 import typer
 from rich.logging import RichHandler
 
@@ -41,7 +41,13 @@ def validate_ro_crate(
             help="Path to the ro-crate root directory (or ro-crate-metadata.json)",
         ),
     ],
+    report_json: bool = False
 ):
     if crate_path.is_file():
         crate_path = crate_path.parent
-    bia_roc_validation(crate_path)
+
+    if report_json:
+        report = bia_roc_validation(crate_path, "report")
+        print(json.dumps(report, indent=2))
+    else:
+        bia_roc_validation(crate_path)

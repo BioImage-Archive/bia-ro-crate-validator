@@ -104,6 +104,15 @@ def get_test_ro_crate_path(accession_id, test_folder="validator") -> Path:
             ],
         ),
         (
+            "test_file_list_duplicate_path",
+            1,
+            [
+                (
+                    "File list contains multiple references to the same file path.",
+                ),
+            ],
+        ),
+        (
             "test_minimal_valid_ro_crate",
             0,
             [],

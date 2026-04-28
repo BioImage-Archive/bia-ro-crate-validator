@@ -18,3 +18,6 @@ class ValidationError:
 
     def to_exception(self) -> Exception:
         return Exception(self.format_message())
+    
+    def to_dict(self):
+        return self.__dict__
