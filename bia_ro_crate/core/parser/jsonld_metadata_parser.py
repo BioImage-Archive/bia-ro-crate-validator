@@ -271,9 +271,9 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         result = services.validate(settings)
 
         severity_map = {
-            "REQUIRED": "ERROR",
-            "RECOMMENDED": "WARNING",
-            "OPTIONAL": "INFO",
+            "REQUIRED": Severity.ERROR,
+            "RECOMMENDED":  Severity.WARNING,
+            "OPTIONAL":  Severity.INFO,
         }
 
         if result.has_issues():
@@ -286,7 +286,7 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
                 self._parse_issues.append(
                     ValidationError(
                         severity=Severity(
-                            severity_map.get(issue.severity.name, "INFO")
+                            severity_map.get(issue.severity.name, Severity.INFO)
                         ),
                         location_description=error_location,
                         message=(
