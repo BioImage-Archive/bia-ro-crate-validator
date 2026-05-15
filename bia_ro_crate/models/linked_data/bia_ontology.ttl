@@ -54,8 +54,8 @@ bia:authorNames a owl:DatatypeProperty ;
     rdfs:domain bia:Publication ;
     rdfs:range xsd:string .
 
-bia:publicationYear a owl:DatatypeProperty ;
-    rdfs:label "publication year"@en ;
+bia:yearPublished a owl:DatatypeProperty ;
+    rdfs:label "year published"@en ;
     rdfs:comment "The year in which the publication was first published."@en ;
     rdfs:domain bia:Publication ;
     rdfs:range xsd:integer .

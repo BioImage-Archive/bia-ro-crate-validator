@@ -6,6 +6,7 @@ class SCHEMA(DefinedNamespace):
     # Classes
     CreativeWork: URIRef
     Dataset: URIRef
+    Grant: URIRef
     Organization: URIRef
     Person: URIRef
     ScholarlyArticle: URIRef
@@ -18,6 +19,8 @@ class SCHEMA(DefinedNamespace):
     datePublished: URIRef
     description: URIRef
     email: URIRef
+    funder: URIRef
+    funding: URIRef
     hasPart: URIRef
     identifier: URIRef
     isPartOf: URIRef
@@ -129,7 +132,6 @@ class BIA(DefinedNamespace):
     inputImage: URIRef
     intrinsicVariableDescription: URIRef
     protocol: URIRef
-    publicationYear: URIRef
     pubmedId: URIRef
     relatedPublication: URIRef
     resultOf: URIRef
@@ -146,6 +148,7 @@ class BIA(DefinedNamespace):
     website: URIRef
     xIndex: URIRef
     yIndex: URIRef
+    yearPublished: URIRef
     zIndex: URIRef
     tIndex: URIRef
     cIndex: URIRef

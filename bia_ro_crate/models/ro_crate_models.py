@@ -50,6 +50,7 @@ class Study(ROCrateModel):
         list[ObjectReference],
         FieldContext(BIA.relatedPublication, is_id_field=True),
     ] = Field(default_factory=list)
+    funding: Annotated[list[ObjectReference], FieldContext(SCHEMA.funding)] = Field(default_factory=list)
 
     model_config = ConfigDict(model_type=BIA.Study)
 
@@ -62,9 +63,9 @@ class Study(ROCrateModel):
 
 
 class Publication(ROCrateModel):
-    title: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
+    name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
     authorNames: Annotated[Optional[str], FieldContext(BIA.authorNames)] = Field(default=None)
-    publicationYear: Annotated[Optional[int], FieldContext(BIA.publicationYear)] = Field(default=None)
+    yearPublished: Annotated[Optional[int], FieldContext(BIA.yearPublished)] = Field(default=None)
     pubmedId: Annotated[Optional[str], FieldContext(BIA.pubmedId)] = Field(default=None)
     doi: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(default=None)
 
@@ -110,13 +111,16 @@ class Affiliaton(ROCrateModel):
 
 
 class Grant(ROCrateModel):
-    pass
+    funder: Annotated[list[ObjectReference], FieldContext(SCHEMA.funder)] = Field()
+    name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
+    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(default=None)
 
     model_config = ConfigDict(model_type=BIA.Grant)
 
 
 class FundingBody(ROCrateModel):
-    pass
+    name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
+    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(default=None)
 
     model_config = ConfigDict(model_type=BIA.FundingBody)
 

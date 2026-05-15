@@ -6,6 +6,7 @@ import typer
 from rich.logging import RichHandler
 
 from bia_ro_crate.validator import bia_roc_validation
+from bia_ro_crate.models.ro_crate_generator_utils import generate_standard_bia_context
 
 bia_ro_crate = typer.Typer(name="bia-ro-crate", context_settings={"help_option_names": ["-h", "--help"]})
 
@@ -51,3 +52,12 @@ def validate_ro_crate(
         print(json.dumps(report, indent=2))
     else:
         bia_roc_validation(crate_path)
+
+@bia_ro_crate.command("generate-context")
+def generate_ro_crate_context(
+    output_file: Annotated[Path, typer.Argument(help="Path to file where a the json-ld context should be written")]
+):
+    context = generate_standard_bia_context()
+
+    with open(output_file, 'w') as f:
+        f.write(json.dumps(context.to_dict(), indent=2))
