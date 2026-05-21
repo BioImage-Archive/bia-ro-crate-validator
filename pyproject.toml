@@ -1,5 +1,5 @@
 [project]
-name = "bia-ro-crate"
+name = "bia-ro-crate-validator"
 version = "0.1.0"
 description = "Data models for describing, parsing, and validating the RO-Crate profile for BIA submissions, with supporting structures such as file lists."
 license = "MIT"
@@ -33,6 +33,11 @@ dev = [
     "pytest (>=9.0.2,<10.0.0)",
     "pytest-check (>=2.8.0,<3.0.0)",
     "ruff (>=0.15.8,<0.16.0)",
+]
+
+[tool.poetry]
+packages = [
+    {include = "bia_ro_crate", from = "src"},
 ]
 
 [tool.poetry.dependencies]
