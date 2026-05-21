@@ -1,32 +1,25 @@
 [project]
 name = "bia-ro-crate"
 version = "0.1.0"
-description = "Package containing the data models describing,  parsing and validating the ro-crate profile for BIA submissions, as well as additional data structures, such as file lists."
+description = "Data models for describing, parsing, and validating the RO-Crate profile for BIA submissions, with supporting structures such as file lists."
+license = "MIT"
 authors = [
-    {name = "Francois Sherwood", email = "fsherwood@ebi.ac.uk"}, {name = "Cesare", email = "cesare@ebi.ac.uk"}
+    {name = "Francois Sherwood", email = "fsherwood@ebi.ac.uk"},
+    {name = "Cesare", email = "cesare@ebi.ac.uk"},
 ]
-requires-python = ">=3.13,<4.0"
+requires-python = ">=3.13"
 dependencies = [
-    "pydantic (>=2.12.5,<3.0.0)",
-    "rdflib (>=7.6.0,<8.0.0)",
-    "pyld (>=2.0.4,<3.0.0)",
-    "roc-validator (>=0.8.1,<0.9.0)",
     "pandas (>=3.0.2,<4.0.0)",
+    "pydantic (>=2.12.5,<3.0.0)",
+    "pyld (>=2.0.4,<3.0.0)",
+    "rdflib (>=7.6.0,<8.0.0)",
+    "rich (>=13.9,<14.0)",
+    "roc-validator (>=0.8.1,<0.9.0)",
     "typer (>=0.24.1,<0.25.0)",
-    "rich (>=13.9,<14.0)"
 ]
-
-
-[tool.ruff]
-target-version = "py313"
 
 [project.scripts]
-bia-ro-crate = "cli:bia_ro_crate"
-
-[tool.poetry]
-packages = [
-    {include = "bia_ro_crate"},
-]
+bia-ro-crate = "bia_ro_crate.cli:bia_ro_crate"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -34,28 +27,19 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
+    "black (>=26.3.1,<27.0.0)",
+    "commitizen (>=4.13.9,<5.0.0)",
+    "isort (>=8.0.1,<9.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
     "pytest-check (>=2.8.0,<3.0.0)",
-    "black (>=26.3.1,<27.0.0)",
     "ruff (>=0.15.8,<0.16.0)",
-    "isort (>=8.0.1,<9.0.0)",
-    "commitizen (>=4.13.9,<5.0.0)",
 ]
 
-[tool.poetry.group.dev.dependencies]
-pytest = ">=9.0.2,<10.0.0"
-pytest-check = ">=2.8.0,<3.0.0"
-black = ">=26.3.1,<27.0.0"
-ruff = ">=0.15.8,<0.16.0"
-isort = ">=8.0.1,<9.0.0"
-commitizen = ">=4.13.9,<5.0.0"
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0"
 
-
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    "ignore::DeprecationWarning:rdflib",
-]
+[tool.black]
+target-version = ["py313"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -67,3 +51,18 @@ version_files = [
 ]
 update_changelog_on_bump = true
 major_version_zero = true
+
+[tool.isort]
+profile = "black"
+py_version = 313
+src_paths = ["src", "test"]
+known_first_party = ["bia_ro_crate"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:rdflib",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"

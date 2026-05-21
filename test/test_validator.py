@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pytest
 import pytest_check as check
-from cli import bia_ro_crate
 from typer.testing import CliRunner
+
+from bia_ro_crate.cli import bia_ro_crate
 
 runner = CliRunner()
 
@@ -107,9 +108,7 @@ def get_test_ro_crate_path(accession_id, test_folder="validator") -> Path:
             "test_file_list_duplicate_path",
             1,
             [
-                (
-                    "File list contains multiple references to the same file path.",
-                ),
+                ("File list contains multiple references to the same file path.",),
             ],
         ),
         (

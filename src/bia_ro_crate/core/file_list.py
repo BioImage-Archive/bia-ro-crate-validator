@@ -1,4 +1,5 @@
 import pandas as pd
+
 from bia_ro_crate.models.ro_crate_models import Column
 
 
@@ -26,7 +27,7 @@ class FileList:
         self.ro_crate_id = ro_crate_id
 
         self._validate_schema_dict(schema)
-        schema_name_map = self._column_map('columnName', 'id')
+        schema_name_map = self._column_map("columnName", "id")
         self._validate_column_defitions(schema_name_map, data.columns, strict)
         column_id_map = {
             col_name: schema_name_map[col_name] for col_name in data.columns
@@ -60,15 +61,19 @@ class FileList:
 
     def get_column_id_by_property(self, propertyUrl) -> str | None:
         return next(
-            (column.id for column in self.schema.values() if column.propertyUrl == propertyUrl),
+            (
+                column.id
+                for column in self.schema.values()
+                if column.propertyUrl == propertyUrl
+            ),
             None,
         )
 
     def get_column_properties(self) -> dict[str, None | str]:
-        return self._column_map('id', 'propertyUrl')
+        return self._column_map("id", "propertyUrl")
 
     def get_column_names(self) -> dict[str, str]:
-        return self._column_map('id', 'columnName')
+        return self._column_map("id", "columnName")
 
     def add_column(self, columnDefinition: Column, data: list | pd.Series):
         if len(data) != len(self.data):

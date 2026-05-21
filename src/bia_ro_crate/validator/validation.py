@@ -14,8 +14,11 @@ class ValidationResponseMode(StrEnum):
     error = "error"
     report = "report"
 
+
 def _log_issues(parser: ROCrateParser) -> None:
-    logger_by_severity = {level: logger.__getattribute__(str(level).lower()) for level in Severity}
+    logger_by_severity = {
+        level: logger.__getattribute__(str(level).lower()) for level in Severity
+    }
 
     for issue in parser.issues:
         log_fn = logger_by_severity.get(issue.severity)
@@ -32,16 +35,20 @@ def _report_issues(parser: ROCrateParser) -> dict[str, None | dict[str, list[dic
         if issue.severity > highest_error_level:
             highest_error_level = issue.severity
 
-    report  = {
-        "highest_error_level": str(highest_error_level) if highest_error_level else None,
-        "issues": report_by_severity
+    report = {
+        "highest_error_level": str(highest_error_level)
+        if highest_error_level
+        else None,
+        "issues": report_by_severity,
     }
 
     return report
 
 
-
-def bia_roc_validation(ro_crate_directory: Path, validation_mode: ValidationResponseMode = ValidationResponseMode.error):
+def bia_roc_validation(
+    ro_crate_directory: Path,
+    validation_mode: ValidationResponseMode = ValidationResponseMode.error,
+):
     ro_crate_parser = ROCrateParser(ro_crate_directory)
 
     try:
@@ -49,8 +56,7 @@ def bia_roc_validation(ro_crate_directory: Path, validation_mode: ValidationResp
         ro_crate_parser.result
     except ExceptionGroup:
         raise SystemExit(1)
-    finally:           
+    finally:
         _log_issues(ro_crate_parser)
         if validation_mode == ValidationResponseMode.report:
             return _report_issues(ro_crate_parser)
-    

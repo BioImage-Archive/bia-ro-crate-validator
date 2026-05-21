@@ -1,11 +1,12 @@
 import inspect
 
+from rdflib import URIRef
+
 from bia_ro_crate.models import ro_crate_models
 from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
 from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
-from rdflib import URIRef
 
 
 def get_standard_bia_context_prefixes() -> dict[str, str]:

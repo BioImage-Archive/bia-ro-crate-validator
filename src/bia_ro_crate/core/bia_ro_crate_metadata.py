@@ -3,12 +3,13 @@ from operator import attrgetter
 from pathlib import Path
 from typing import Iterable
 
+from rdflib import Graph
+
 from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
 from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
 from bia_ro_crate.models.ro_crate_models import FileList
-from rdflib import Graph
 
 
 class BIAROCrateMetadata:
@@ -57,9 +58,9 @@ class BIAROCrateMetadata:
         context_dict = self._context.to_dict()
 
         graph_objects = [
-            entity.model_dump(by_alias=True, mode='json')
+            entity.model_dump(by_alias=True, mode="json")
             for entity in sorted(
-                self._graph_bia_entities.values(), key=attrgetter('id')
+                self._graph_bia_entities.values(), key=attrgetter("id")
             )
         ]
 
@@ -76,7 +77,7 @@ class BIAROCrateMetadata:
 
     def get_object(self, id: str) -> ROCrateModel | None:
         return self._graph_bia_entities.get(id)
-    
+
     def add_entity(self, entity: ROCrateModel) -> None:
         if entity.id in self._graph_bia_entities:
             raise ValueError(f"Entity with id {entity.id} already exists.")

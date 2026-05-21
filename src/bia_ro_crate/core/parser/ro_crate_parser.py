@@ -1,14 +1,14 @@
+from collections.abc import Iterable
 from pathlib import Path
 
 import pandas as pd
-from collections.abc import Iterable
 from rdflib import URIRef
 
 from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
 from bia_ro_crate.core.bia_submission_metadata import BIASubmissionMetadata
 from bia_ro_crate.core.file_list import FileList
-from bia_ro_crate.core.parser.file_list_parser import FileListParser
 from bia_ro_crate.core.parser.base_parser import Parser
+from bia_ro_crate.core.parser.file_list_parser import FileListParser
 from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
 from bia_ro_crate.core.parser.tsv_metadata_parser import TSVMetadataParser
 from bia_ro_crate.core.validation.severity import Severity
@@ -49,9 +49,7 @@ class ROCrateParser(Parser[BIASubmissionMetadata]):
         referenced_ids.update(self._file_list_reference_ids(file_list))
 
         unconnected_ids = sorted(
-            metadata_ids
-            - referenced_ids
-            - {metadata.DEFAULT_RO_CRATE_FILENAME}
+            metadata_ids - referenced_ids - {metadata.DEFAULT_RO_CRATE_FILENAME}
         )
 
         if unconnected_ids:
@@ -98,13 +96,17 @@ class ROCrateParser(Parser[BIASubmissionMetadata]):
 
             nested_references: set[str] = set()
             for nested_value in value.values():
-                nested_references.update(cls._collect_object_reference_ids(nested_value))
+                nested_references.update(
+                    cls._collect_object_reference_ids(nested_value)
+                )
             return nested_references
 
         if isinstance(value, list):
             nested_references: set[str] = set()
             for nested_value in value:
-                nested_references.update(cls._collect_object_reference_ids(nested_value))
+                nested_references.update(
+                    cls._collect_object_reference_ids(nested_value)
+                )
             return nested_references
 
         return set()

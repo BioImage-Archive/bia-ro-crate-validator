@@ -1,10 +1,10 @@
 from typing import Annotated
 
-from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 from pydantic import AfterValidator, BaseModel, Field
 from rdflib import OWL, RDF
 from rdflib.graph import Graph
 
+from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
 from bia_ro_crate.models.linked_data.pydantic_ld.utils import id_validate
 
