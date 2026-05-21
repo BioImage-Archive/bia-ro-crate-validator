@@ -1,3 +1,7 @@
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
+from rdflib import RDFS
+from typing_extensions import Annotated, Optional
+
 from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
@@ -8,9 +12,6 @@ from bia_ro_crate.models.linked_data.ontology_terms import (
 from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
 from bia_ro_crate.models.linked_data.pydantic_ld.LDModel import ObjectReference
 from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
-from rdflib import RDFS
-from typing_extensions import Annotated, Optional
 
 
 class ROCrateCreativeWork(ROCrateModel):
@@ -45,12 +46,16 @@ class Study(ROCrateModel):
         FieldContext(SCHEMA.hasPart, is_id_field=True),
     ] = Field()
     accessionId: Annotated[str, FieldContext(SCHEMA.identifier)] = Field()
-    seeAlso: Annotated[list[ObjectReference], FieldContext(RDFS.seeAlso)] = Field(default_factory=list)
+    seeAlso: Annotated[list[ObjectReference], FieldContext(RDFS.seeAlso)] = Field(
+        default_factory=list
+    )
     relatedPublication: Annotated[
         list[ObjectReference],
         FieldContext(BIA.relatedPublication, is_id_field=True),
     ] = Field(default_factory=list)
-    funding: Annotated[list[ObjectReference], FieldContext(SCHEMA.funding)] = Field(default_factory=list)
+    funding: Annotated[list[ObjectReference], FieldContext(SCHEMA.funding)] = Field(
+        default_factory=list
+    )
 
     model_config = ConfigDict(model_type=BIA.Study)
 
@@ -64,8 +69,12 @@ class Study(ROCrateModel):
 
 class Publication(ROCrateModel):
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
-    authorNames: Annotated[Optional[str], FieldContext(BIA.authorNames)] = Field(default=None)
-    yearPublished: Annotated[Optional[int], FieldContext(BIA.yearPublished)] = Field(default=None)
+    authorNames: Annotated[Optional[str], FieldContext(BIA.authorNames)] = Field(
+        default=None
+    )
+    yearPublished: Annotated[Optional[int], FieldContext(BIA.yearPublished)] = Field(
+        default=None
+    )
     pubmedId: Annotated[Optional[str], FieldContext(BIA.pubmedId)] = Field(default=None)
     doi: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(default=None)
 
@@ -113,14 +122,18 @@ class Affiliaton(ROCrateModel):
 class Grant(ROCrateModel):
     funder: Annotated[list[ObjectReference], FieldContext(SCHEMA.funder)] = Field()
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
-    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(default=None)
+    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(
+        default=None
+    )
 
     model_config = ConfigDict(model_type=BIA.Grant)
 
 
 class FundingBody(ROCrateModel):
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
-    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(default=None)
+    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(
+        default=None
+    )
 
     model_config = ConfigDict(model_type=BIA.FundingBody)
 

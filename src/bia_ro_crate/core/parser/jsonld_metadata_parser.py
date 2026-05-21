@@ -3,6 +3,16 @@ from pathlib import Path
 
 import pydantic
 import pyld
+from pydantic_core import ErrorDetails
+from rdflib import RDF, Graph, URIRef
+from rocrate_validator import models, services
+
+from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
+from bia_ro_crate.core.parser.ro_crate_metadata_parser import (
+    ROCrateMetadataParser,
+)
+from bia_ro_crate.core.validation.severity import Severity
+from bia_ro_crate.core.validation.validation_error import ValidationError
 from bia_ro_crate.models.linked_data.ld_context import (
     ContextTerm,
     SimpleJSONLDContext,
@@ -13,15 +23,6 @@ from bia_ro_crate.models.ro_crate_generator_utils import (
     generate_standard_bia_context,
     get_all_ro_crate_classes,
 )
-from pydantic_core import ErrorDetails
-from rdflib import RDF, Graph, URIRef
-from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
-from bia_ro_crate.core.parser.ro_crate_metadata_parser import (
-    ROCrateMetadataParser,
-)
-from bia_ro_crate.core.validation.severity import Severity
-from bia_ro_crate.core.validation.validation_error import ValidationError
-from rocrate_validator import models, services
 
 
 class JSONLDMetadataParser(ROCrateMetadataParser):
@@ -272,8 +273,8 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
 
         severity_map = {
             "REQUIRED": Severity.ERROR,
-            "RECOMMENDED":  Severity.WARNING,
-            "OPTIONAL":  Severity.INFO,
+            "RECOMMENDED": Severity.WARNING,
+            "OPTIONAL": Severity.INFO,
         }
 
         if result.has_issues():

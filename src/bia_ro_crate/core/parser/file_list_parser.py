@@ -2,16 +2,16 @@ from pathlib import Path
 from urllib.parse import quote, unquote
 
 import pandas as pd
-from bia_ro_crate.models import ro_crate_models
-from bia_ro_crate.models.linked_data.ontology_terms import BIA, SCHEMA
-from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
 from rdflib import RDF, URIRef
+
 from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
 from bia_ro_crate.core.file_list import FileList
 from bia_ro_crate.core.parser.metadata_parser import MetadataParser
-
 from bia_ro_crate.core.validation.severity import Severity
 from bia_ro_crate.core.validation.validation_error import ValidationError
+from bia_ro_crate.models import ro_crate_models
+from bia_ro_crate.models.linked_data.ontology_terms import BIA, SCHEMA
+from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
 
 
 class FileListParser(MetadataParser[FileList]):
@@ -197,17 +197,17 @@ class FileListParser(MetadataParser[FileList]):
 
         self._parse_issues += errors.dropna().to_list()
 
-    def _validate_unique_file_paths(self, data: pd.DataFrame, columns: dict[str, ro_crate_models.Column]):
-       file_path_column_name = columns[self._file_path_column_id].columnName
-       if not data[file_path_column_name].is_unique:
+    def _validate_unique_file_paths(
+        self, data: pd.DataFrame, columns: dict[str, ro_crate_models.Column]
+    ):
+        file_path_column_name = columns[self._file_path_column_id].columnName
+        if not data[file_path_column_name].is_unique:
             self._parse_issues.append(
                 ValidationError(
                     severity=Severity.ERROR,
                     message="File list contains multiple references to the same file path.",
                 )
             )
-
-        
 
     @staticmethod
     def _check_row_reference_and_type_against_roc_metadata(

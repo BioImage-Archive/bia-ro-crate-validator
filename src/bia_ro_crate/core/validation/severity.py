@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+
 class Severity(IntEnum):
     CRITICAL = 50
     ERROR = 40
