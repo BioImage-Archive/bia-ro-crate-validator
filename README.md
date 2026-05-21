@@ -1,36 +1,44 @@
-# BIA RO-Crate
+# BIA RO-Crate Validator
 
-This package contains definitions of the structure of RO-Crates when documenting submissions to the BioImage Archive. (BIA).
+This package contains definitions of the structure of RO-Crates when documenting submissions to the BioImage Archive (BIA).
+
+## Installation
+
+Install the package with pip:
+
+```sh
+pip install bia-ro-crate-validator
+```
+
+From a source checkout, install the package with:
+
+```sh
+pip install .
+```
+
+The package requires Python 3.13 or newer.
 
 ## Validator
 
-This package contains validation logic for BIA RO-Crates. The validator can be run on an RO-Crate using the cli provided. The package can be installed with your preferred package manager. Installation has been tested with uv and poetry>2.0, as follows:
+This package contains validation logic for BIA RO-Crates. The validator can be run on an RO-Crate using the CLI provided:
 
 ```sh
-uv venv
-uv sync
+bia-ro-crate validate <path to the directory root of the RO-Crate>
 ```
 
-or
+Use `-h` or `--help` to see options for the CLI.
+
+For local development, install the project with Poetry:
 
 ```sh
-poetry env use 3.13
 poetry install
 ```
 
-and the cli can be run on local RO-Crates:
+Then run the CLI from the Poetry environment:
 
 ```sh
-uv run bia-RO-Crate validate <path to the directory root of the RO-Crate>
+poetry run bia-ro-crate validate <path to the directory root of the RO-Crate>
 ```
-
-or
-
-```sh
-poetry run bia-RO-Crate validate <path to the directory root of the RO-Crate>
-```
-
-Use '-h/--help' to see options for the cli.
 
 ## RO-Crate
 

@@ -3,11 +3,22 @@ name = "bia-ro-crate-validator"
 version = "0.1.0"
 description = "Data models for describing, parsing, and validating the RO-Crate profile for BIA submissions, with supporting structures such as file lists."
 license = "MIT"
+readme = "README.md"
 authors = [
     {name = "Francois Sherwood", email = "fsherwood@ebi.ac.uk"},
     {name = "Cesare", email = "cesare@ebi.ac.uk"},
 ]
 requires-python = ">=3.13"
+keywords = ["bia", "bioimage archive", "json-ld", "ro-crate", "validator"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "pandas (>=3.0.2,<4.0.0)",
     "pydantic (>=2.12.5,<3.0.0)",
@@ -20,6 +31,11 @@ dependencies = [
 
 [project.scripts]
 bia-ro-crate = "bia_ro_crate.cli:bia_ro_crate"
+
+[project.urls]
+Homepage = "https://github.com/BioImage-Archive/bia-ro-crate-validator"
+Issues = "https://github.com/BioImage-Archive/bia-ro-crate-validator/issues"
+Repository = "https://github.com/BioImage-Archive/bia-ro-crate-validator"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
