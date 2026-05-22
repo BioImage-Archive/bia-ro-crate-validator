@@ -136,6 +136,8 @@ While it is possible to document this with json objects within the ro-crate-meta
 
 The BIA refers to these manifests as File Lists. While they are in no way covered by the RO-Crate specification, the spec does allow for manifests and other metadata defining documents to be provided alongside the ro-crate-metadata.json.
 
+There are examples of [valid minium](test/validator/input_ro_crate/test_minimal_valid_ro_crate) and [valid typical](test/validator/input_ro_crate/test_typical_ro_crate) BIA RO-Crates in the tests.
+
 ## BIA's conceptual model of imaging metadata
 
 At a very high level, the BIA's data model follows the following overarching theme
@@ -150,7 +152,7 @@ Dataset -- hasPart --> Data ;
 
 (Imaging) data is the output of a creation process (as in the diagram above), which followed the recipe provided by one or more protocols applied to a physical specimen or took some other data as input.
 
-This data is grouped into datasets. Each provides anaoverview on the information stored in the whole data or a part of it. For instance license is assumed to apply to each individual data where as only some of the images were taken by some of the authors of the dataset.
+This data is grouped into datasets. Each provides an overview on the information stored in the whole data or a part of it. For instance license is assumed to apply to each individual data where as only some of the images were taken by some of the authors of the dataset.
 
 The more specific recommendations on Biological Imaging Metadata from the _'Recommended Metadata for Biological Images'_  (REMBI, see: <https://www.nature.com/articles/s41592-021-01166-8>) and _'Metadata, Incentives, Formats, and Accessibility guidelines to improve the reuse of AI datasets for bioimage analysis'_ (MIFA, see: <https://arxiv.org/abs/2311.10443>) are then applied to the high-level structure defined above to define the more specific fields and concepts.
 
