@@ -16,6 +16,11 @@ class ObjectReference(BaseModel):
 class LDModel(BaseModel):
     @classmethod
     def generate_field_context(cls, compacted_ids: bool = False) -> list[ContextTerm]:
+        """
+        compacted_ids controls whether is_id_field is used to set "@type": "@id" in the generated context.
+        This setting should be used 
+        """
+
         # TODO: add support for various json-ld profiles / other context generation settings
         field_contexts = []
 
@@ -25,16 +30,11 @@ class LDModel(BaseModel):
             )
 
             if field_context:
-                if compacted_ids and field_context.is_id_field:
-                    term = ContextTerm(
-                        full_uri=field_context.uri,
-                        field_name=field_name,
-                        type_mapping="@id",
-                    )
-                else:
-                    term = ContextTerm(
-                        full_uri=field_context.uri, field_name=field_name
-                    )
+
+                term = field_context.to_context_term(field_name)
+
+                if not compacted_ids and field_context.is_id_field:
+                    term.type_mapping = None
 
                 field_contexts.append(term)
 
