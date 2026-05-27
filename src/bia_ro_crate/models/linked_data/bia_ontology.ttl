@@ -42,7 +42,7 @@ bia:accessionId a owl:DatatypeProperty;
         """A string uniquely identifying an addition of a (new) item to the database in which it is stored. 
         This property should be expected to be of type owl:InverseFunctionalProperty in the context of the database of the item (only).
         E.g. S-BIAD1234 uniquiely identifies a study in the BioImage Archive, but might be appear as the accessionId of an unrelated item in a different database."""@en ;
-    rdfs:subPropertyOf dc:identifier ; # Should we just recommend using dc:identifier?
+    rdfs:subPropertyOf dc:identifier ;
     rdfs:range xsd:string .
 
 bia:authorNames a owl:DatatypeProperty ;
@@ -54,10 +54,17 @@ bia:authorNames a owl:DatatypeProperty ;
     rdfs:domain bia:Publication ;
     rdfs:range xsd:string .
 
+bia:doi a owl:DatatypeProperty ;
+    rdfs:label "doi"@en ;
+    rdfs:comment 
+        """The Digital Object Identifier (DOI) of the item."""@en ;
+    rdfs:domain bia:Publication ;
+    rdfs:subPropertyOf dc:identifier ; 
+    rdfs:range xsd:string .
+
 bia:yearPublished a owl:DatatypeProperty ;
     rdfs:label "year published"@en ;
     rdfs:comment "The year in which the publication was first published."@en ;
-    rdfs:domain bia:Publication ;
     rdfs:range xsd:integer .
 
 bia:pubmedId a owl:DatatypeProperty ;
@@ -551,7 +558,7 @@ bia:ImageCorrelationMethod a owl:Class ;
 
 # Properties
 
-bia:protocolDescription a owl:DatatypeProperty ;
+bia:description a owl:DatatypeProperty ;
     rdfs:label "protocol description"@en ;
     rdfs:comment "A text description of the set of actions to perform when following a protocol."@en ;
     rdfs:range rdf:langString ;

@@ -1,7 +1,7 @@
 {
   "@context": {
     "accessionId": {
-      "@id": "schema:identifier"
+      "@id": "bia:accessionId"
     },
     "acknowledgement": {
       "@id": "bia:acknowledgement"
@@ -11,9 +11,6 @@
     },
     "address": {
       "@id": "schema:address"
-    },
-    "affiliation": {
-      "@id": "schema:memberOf"
     },
     "annotationCoverage": {
       "@id": "bia:annotationCoverage"
@@ -57,6 +54,9 @@
     "associatedSpecimenImagingPreparationProtocol": {
       "@id": "bia:associatedImagingPreparationProtocol"
     },
+    "author": {
+      "@id": "schema:author"
+    },
     "authorNames": {
       "@id": "bia:authorNames"
     },
@@ -64,17 +64,11 @@
     "biologicalEntity": {
       "@id": "bia:sampleOf"
     },
-    "biologicalEntityDescription": {
-      "@id": "bia:biologicalEntityDescription"
-    },
     "channelBiologicalEntity": {
       "@id": "bia:channelBiologicalEntity"
     },
     "channelContentDescription": {
       "@id": "bia:channelContentDescription"
-    },
-    "channelLabel": {
-      "@id": "dc:identifier"
     },
     "column": {
       "@id": "csvw:column"
@@ -85,12 +79,6 @@
     "commonName": {
       "@id": "http://rs.tdwg.org/dwc/terms/vernacularName"
     },
-    "contactEmail": {
-      "@id": "schema:email"
-    },
-    "contributor": {
-      "@id": "schema:author"
-    },
     "csvw": "http://www.w3.org/ns/csvw#",
     "datePublished": {
       "@id": "schema:datePublished"
@@ -99,11 +87,11 @@
     "description": {
       "@id": "schema:description"
     },
-    "displayName": {
-      "@id": "schema:name"
-    },
     "doi": {
-      "@id": "schema:identifier"
+      "@id": "bia:doi"
+    },
+    "email": {
+      "@id": "schema:email"
     },
     "experimentalVariableDescription": {
       "@id": "bia:experimentalVariableDescription"
@@ -133,7 +121,7 @@
       "@id": "schema:hasPart"
     },
     "identifier": {
-      "@id": "dc:identifier"
+      "@id": "schema:identifier"
     },
     "imageAcquisitionProtocol": {
       "@id": "bia:imageAcquisitionProtocol"
@@ -153,14 +141,14 @@
     "intrinsicVariableDescription": {
       "@id": "bia:intrinsicVariableDescription"
     },
-    "keyword": {
+    "keywords": {
       "@id": "schema:keywords"
-    },
-    "label": {
-      "@id": "schema:name"
     },
     "license": {
       "@id": "schema:license"
+    },
+    "memberOf": {
+      "@id": "schema:memberOf"
     },
     "methodType": {
       "@id": "bia:annotationMethodType"
@@ -176,9 +164,6 @@
     },
     "protocol": {
       "@id": "bia:protocol"
-    },
-    "protocolDescription": {
-      "@id": "schema:description"
     },
     "pubmedId": {
       "@id": "bia:pubmedId"
@@ -214,9 +199,6 @@
     },
     "tableSchema": {
       "@id": "csvw:tableSchema"
-    },
-    "title": {
-      "@id": "schema:name"
     },
     "transformationDescription": {
       "@id": "bia:transformationDescription"

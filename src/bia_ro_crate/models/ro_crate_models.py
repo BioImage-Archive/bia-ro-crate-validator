@@ -6,7 +6,6 @@ from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
     DARWINCORE,
-    DUBLINCORE,
     SCHEMA,
 )
 from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
@@ -28,14 +27,14 @@ class ROCrateCreativeWork(ROCrateModel):
 
 class Study(ROCrateModel):
     name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
-    contributor: Annotated[
+    author: Annotated[
         list[ObjectReference],
         FieldContext(SCHEMA.author, is_id_field=True),
     ] = Field(min_length=1)
     description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
     license: Annotated[AnyUrl, FieldContext(SCHEMA.license)] = Field()
     datePublished: Annotated[str, FieldContext(SCHEMA.datePublished)] = Field()
-    keyword: Annotated[list[str], FieldContext(SCHEMA.keywords)] = Field(
+    keywords: Annotated[list[str], FieldContext(SCHEMA.keywords)] = Field(
         default_factory=list
     )
     acknowledgement: Annotated[Optional[str], FieldContext(BIA.acknowledgement)] = (
@@ -45,7 +44,8 @@ class Study(ROCrateModel):
         list[ObjectReference],
         FieldContext(SCHEMA.hasPart, is_id_field=True),
     ] = Field()
-    accessionId: Annotated[str, FieldContext(SCHEMA.identifier)] = Field()
+    accessionId: Annotated[str, FieldContext(BIA.accessionId)] = Field()
+    doi: Annotated[str, FieldContext(BIA.doi)] = Field()
     seeAlso: Annotated[list[ObjectReference], FieldContext(RDFS.seeAlso)] = Field(
         default_factory=list
     )
@@ -76,7 +76,7 @@ class Publication(ROCrateModel):
         default=None
     )
     pubmedId: Annotated[Optional[str], FieldContext(BIA.pubmedId)] = Field(default=None)
-    doi: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(default=None)
+    doi: Annotated[Optional[str], FieldContext(BIA.doi)] = Field(default=None)
 
     model_config = ConfigDict(model_type=BIA.Publication)
 
@@ -85,19 +85,19 @@ class Publication(ROCrateModel):
 
 
 class Contributor(ROCrateModel):
-    displayName: Annotated[str, FieldContext(SCHEMA.name)] = Field()
+    name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     address: Annotated[Optional[str], FieldContext(SCHEMA.address)] = Field(
         default=None
     )
     website: Annotated[Optional[AnyUrl], FieldContext(BIA.website)] = Field(
         default=None
     )
-    affiliation: Annotated[
+    memberOf: Annotated[
         list[ObjectReference],
         FieldContext(SCHEMA.memberOf),
     ] = Field(default_factory=list)
     role: Annotated[list[str], FieldContext(BIA.role)] = Field(default_factory=list)
-    contactEmail: Annotated[Optional[str], FieldContext(SCHEMA.email)] = Field(
+    email: Annotated[Optional[str], FieldContext(SCHEMA.email)] = Field(
         default=None
     )
 
@@ -105,7 +105,7 @@ class Contributor(ROCrateModel):
 
 
 class Affiliaton(ROCrateModel):
-    displayName: Annotated[str, FieldContext(SCHEMA.name)] = Field()
+    name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     address: Annotated[Optional[str], FieldContext(SCHEMA.address)] = Field(
         default=None
     )
@@ -122,7 +122,7 @@ class Affiliaton(ROCrateModel):
 class Grant(ROCrateModel):
     funder: Annotated[list[ObjectReference], FieldContext(SCHEMA.funder)] = Field()
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
-    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(
+    identifier: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(
         default=None
     )
 
@@ -131,7 +131,7 @@ class Grant(ROCrateModel):
 
 class FundingBody(ROCrateModel):
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
-    identifier: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(
+    identifier: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(
         default=None
     )
 
@@ -211,10 +211,6 @@ class Dataset(ROCrateModel):
         FieldContext(BIA.associatedProtocol, is_id_field=True),
     ] = Field(default_factory=list)
 
-    hasPart: Annotated[
-        list[ObjectReference],
-        FieldContext(SCHEMA.hasPart, is_id_field=True),
-    ] = Field(default_factory=list)
 
     model_config = ConfigDict(model_type=BIA.Dataset)
 
@@ -256,7 +252,7 @@ class Image(ROCrateModel):
     resultOf: Annotated[
         ObjectReference, FieldContext(BIA.resultOf, is_id_field=True)
     ] = Field(default=None)
-    label: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
+    name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
 
     model_config = ConfigDict(model_type=BIA.Image)
 
@@ -265,7 +261,7 @@ class AnnotationData(ROCrateModel):
     resultOf: Annotated[
         ObjectReference, FieldContext(BIA.resultOf, is_id_field=True)
     ] = Field(default=None)
-    label: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
+    name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
 
     model_config = ConfigDict(model_type=BIA.AnnotationData)
 
@@ -310,9 +306,9 @@ class CreationProcess(ROCrateModel):
 
 
 class BioSample(ROCrateModel):
-    title: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
-    biologicalEntityDescription: Annotated[
-        str, FieldContext(BIA.biologicalEntityDescription)
+    name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
+    description: Annotated[
+        str, FieldContext(SCHEMA.description)
     ] = Field()
     experimentalVariableDescription: Annotated[
         list[str], FieldContext(BIA.experimentalVariableDescription)
@@ -348,8 +344,8 @@ class Taxon(ROCrateModel):
 
 
 class ProtocolMixin(BaseModel):
-    title: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field()
-    protocolDescription: Annotated[str, FieldContext(SCHEMA.description)] = Field()
+    name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field()
+    description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
 
 
 class Protocol(ProtocolMixin, ROCrateModel):
@@ -375,7 +371,7 @@ class SignalChannelInformation(ROCrateModel):
     channelBiologicalEntity: Annotated[
         Optional[str], FieldContext(BIA.channelBiologicalEntity)
     ] = Field(default=None)
-    channelLabel: Annotated[Optional[str], FieldContext(DUBLINCORE.identifier)] = Field(
+    identifier: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(
         default=None
     )
 
