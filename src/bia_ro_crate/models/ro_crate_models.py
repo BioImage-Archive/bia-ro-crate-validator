@@ -45,7 +45,7 @@ class Study(ROCrateModel):
         FieldContext(SCHEMA.hasPart, is_id_field=True),
     ] = Field()
     accessionId: Annotated[str, FieldContext(BIA.accessionId)] = Field()
-    doi: Annotated[str, FieldContext(BIA.doi)] = Field()
+    doi: Annotated[str | None, FieldContext(BIA.doi)] = Field(default=None)
     seeAlso: Annotated[list[ObjectReference], FieldContext(RDFS.seeAlso)] = Field(
         default_factory=list
     )
