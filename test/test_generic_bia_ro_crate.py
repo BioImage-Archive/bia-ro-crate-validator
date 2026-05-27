@@ -37,6 +37,15 @@ def test_parser_to_graph_equivalent():
 
 
 def test_ro_crate_round_trippable():
+    """
+    Test that the ro-crate-metadata.json of the 'typical_ro_crate' can go through json-ld expansion then json-ld  compation 
+    with the original context and get back to the original json. 
+
+    This test makes sure arrays of values are respected throughout the process. 
+    It doesn't guarentee all terms are checked (only those present in the example ro-crates used to test the process)
+
+    This test is complementary to test_ro_crate_context_does_not_duplicate_term_labels.
+    """
     ro_crate = (
         Path(__file__).parent
         / "validator"
@@ -106,6 +115,13 @@ def test_ro_crate_round_trippable():
 
 
 def test_ro_crate_context_does_not_duplicate_term_labels():
+    """
+    Check that, in our context:
+    - there aren't 2 fields mapping to the same URI 
+    - we don't override terms that the base ro-crate context uses
+
+    This test is complementary to test_ro_crate_round_trippable.
+    """
     json_ld_context = generate_standard_bia_context()
     prefixless_context = SimpleJSONLDContext(terms=json_ld_context.terms.values())
     standard_context = prefixless_context.to_dict()
