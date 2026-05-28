@@ -58,7 +58,6 @@ bia:doi a owl:DatatypeProperty ;
     rdfs:label "doi"@en ;
     rdfs:comment 
         """The Digital Object Identifier (DOI) of the item."""@en ;
-    rdfs:domain bia:Publication ;
     rdfs:subPropertyOf dc:identifier ; 
     rdfs:range xsd:string .
 
