@@ -6,6 +6,7 @@ class ContextTerm:
     field_name: str
     type_mapping: str | None
     is_reverse: bool
+    container: str | None
 
     def __init__(
         self,
@@ -13,11 +14,13 @@ class ContextTerm:
         field_name: str,
         type_mapping: str | None = None,
         is_reverse: bool = False,
+        container: str | None = None,
     ):
         self.full_uri = URIRef(full_uri)
         self.field_name = field_name
         self.type_mapping = type_mapping
         self.is_reverse = is_reverse
+        self.container = container
 
     def __eq__(self, other):
         if not isinstance(other, ContextTerm):
@@ -58,6 +61,8 @@ class ContextTerm:
 
         if self.type_mapping:
             context_term |= {"@type": self.type_mapping}
+        if self.container:
+            context_term |= {"@container": self.container}
         return context_term
 
     def to_mapping_dict(

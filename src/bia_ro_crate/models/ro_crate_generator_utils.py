@@ -20,11 +20,10 @@ def get_standard_bia_context_prefixes() -> dict[str, str]:
     return bia_context_prefixes
 
 
-def generate_standard_bia_context() -> SimpleJSONLDContext:
-
+def generate_standard_bia_context(prefixes: dict | None = None)-> SimpleJSONLDContext:
     class_map = get_all_ro_crate_classes()
 
-    context = SimpleJSONLDContext(prefixes=get_standard_bia_context_prefixes())
+    context = SimpleJSONLDContext(prefixes=get_standard_bia_context_prefixes(), force_type_container=True)
 
     for ldclass in class_map.values():
         for field_term in ldclass.generate_field_context():
@@ -32,6 +31,18 @@ def generate_standard_bia_context() -> SimpleJSONLDContext:
 
     return context
 
+
+def generate_embeded_bia_context(prefixes: dict | None = None) -> dict:
+    bia_specific_context = generate_standard_bia_context(prefixes)
+    context = {
+        "@context": [
+            "https://w3id.org/ro/crate/1.1/context",
+            bia_specific_context.to_dict()
+        ]
+    }
+    return context
+
+   
 
 def get_all_ro_crate_classes() -> dict[URIRef, type[ROCrateModel]]:
     ro_crate_pydantic_models = {

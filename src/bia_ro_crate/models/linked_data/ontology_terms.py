@@ -98,6 +98,7 @@ class BIA(DefinedNamespace):
     Taxon: URIRef
 
     # Properties
+    accessionId: URIRef
     acknowledgement: URIRef
     annotationCoverage: URIRef
     annotationCriteria: URIRef
@@ -118,6 +119,7 @@ class BIA(DefinedNamespace):
     biologicalEntityDescription: URIRef
     channelBiologicalEntity: URIRef
     channelContentDescription: URIRef
+    doi: URIRef
     experimentalVariableDescription: URIRef
     extrinsicVariableDescription: URIRef
     fbbiId: URIRef

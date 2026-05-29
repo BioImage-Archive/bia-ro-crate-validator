@@ -6,7 +6,7 @@ from typing import Annotated
 import typer
 from rich.logging import RichHandler
 
-from bia_ro_crate.models.ro_crate_generator_utils import generate_standard_bia_context
+from bia_ro_crate.models.ro_crate_generator_utils import generate_embeded_bia_context
 from bia_ro_crate.validator import bia_roc_validation
 
 bia_ro_crate = typer.Typer(
@@ -71,7 +71,9 @@ def generate_ro_crate_context(
         ),
     ],
 ):
-    context = generate_standard_bia_context()
+    context = generate_embeded_bia_context()
 
     with open(output_file, "w") as f:
-        f.write(json.dumps(context.to_dict(), indent=2))
+        f.write(json.dumps(context, indent=2))
+
+    
