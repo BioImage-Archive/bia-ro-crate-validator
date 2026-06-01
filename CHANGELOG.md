@@ -1,6 +1,12 @@
 ## 0.3.0 (2026-06-01)
 
+### Feat
+
+- Updated RO-Crate models to enable round-trip generation of stucturally valid ro-crate-metadata.json documents using the context.
+
 ## 0.2.1 (2026-05-22)
+
+- Minor changes to the README
 
 ## 0.2.0 (2026-05-21)
 
