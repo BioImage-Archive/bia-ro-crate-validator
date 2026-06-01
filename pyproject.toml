@@ -1,6 +1,6 @@
 [project]
 name = "bia-ro-crate-validator"
-version = "0.2.1"
+version = "0.3.0"
 description = "Data models for describing, parsing, and validating the RO-Crate profile for BIA submissions, with supporting structures such as file lists."
 license = "MIT"
 readme = "README.md"
