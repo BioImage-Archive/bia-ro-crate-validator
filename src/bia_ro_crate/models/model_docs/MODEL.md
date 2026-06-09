@@ -6,6 +6,22 @@ Because the data is modelled in an RO-Crate, and RO-Crate requires referenced fi
 
 RO-Crate requires a number of properties and classes from [schema.org](https://schema.org/), but these are not enough to cover the specifics of biological imaging. The biological sciences already make extensive use of ontologies, so we have reviewed relevant ontologies in order to re-use terms or find suitable parents for terms we have to create.
 
+## Example submission
+
+The image below shows a graphical representation of a typical, small study using the majority of the components available in the BIA's data model. The submission is summarized in a Study, with an associated Publication, and was submitted by an Person affiliated with an Organisation.
+
+The submitted data consists of 4 Images and one non-image AnnotationData. There are two _'raw'_ Images, taken of two Specimens while following the same ImageAcquisitionProtocol. Both specimens are the result of applying the same SpecimenImagingPreparationProtocol to the same BioSample. This BioSample is made up cells of a Taxon which were created by following a GrowthProtocol.
+
+There are also 2 _'processed'_ images, created by taking each of the _'raw'_ Images and following a Protocol. Finally some non-image AnnotationData (e.g. counts of cells per image) was created by following an AnnotationMethod.
+
+The data has been grouped into 2 Datasets: one for all the 'raw' data, the other for the 'processed'. This was up to the preference of the submitter, and not a requirement of the data model. They could equally have created more datasets, divided up the Images and AnnotationData differently, or submitted them all in one. The Datasets can be connected to the various protocols, and BioSample through aggregated connections, summarising the connections described at the Image level.
+
+Though it is only shown for one Image, each can be connected to multiple ImageRepresentations, which are used to identify and describe different serializations of the same underlying data (for instance, conversions between multiple formats).
+
+![pic 6](ro-crate-detailed-datamodels_6.png)
+
+The rest of this document provides the details of why this structure was chosen, its relation to commonly used data design patterns, and how we try to simplify the process of creating the metadata for submissions through aggregative descriptions.
+
 ## Basic Formal Ontology
 
 [Basic Formal Ontology (BFO)](https://bfo-ontology.github.io/) is an 'upper ontology' that is often used in scientific domains as a parent structure for domain specific 'reference ontologies'.
