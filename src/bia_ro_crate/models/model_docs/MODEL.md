@@ -16,7 +16,7 @@ There are also 2 _'processed'_ images, created by taking each of the _'raw'_ Ima
 
 The data has been grouped into 2 Datasets: one for all the 'raw' data, the other for the 'processed'. This was up to the preference of the submitter, and not a requirement of the data model. They could equally have created more datasets, divided up the Images and AnnotationData differently, or submitted them all in one. The Datasets can be connected to the various protocols, and BioSample through aggregated connections, summarising the connections described at the Image level.
 
-Though it is only shown for one Image, each can be connected to multiple ImageRepresentations, which are used to identify and describe different serializations of the same underlying data (for instance, conversions between multiple formats).
+Though it is only shown for one Image, each can be connected to multiple ImageRepresentations, which are used to identify and describe different serializations of the same underlying data (for instance, conversions between multiple formats). Each Image should have at least one representation - the form the data was submitted in by the user.
 
 ![pic 6](ro-crate-detailed-datamodels_6.png)
 
