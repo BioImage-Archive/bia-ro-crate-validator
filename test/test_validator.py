@@ -112,6 +112,11 @@ def get_test_ro_crate_path(accession_id, test_folder="validator") -> Path:
             ],
         ),
         (
+            "test_no_file_list",
+            1,
+            [("does not include", "file_list.tsv")],
+        ),
+        (
             "test_minimal_valid_ro_crate",
             0,
             [],
