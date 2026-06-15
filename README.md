@@ -4,6 +4,8 @@ This package contains definitions of the structure of RO-Crates when documenting
 
 ## Installation
 
+The package requires Python 3.13 or newer.
+
 Install the package with pip:
 
 ```sh
@@ -15,8 +17,6 @@ From a source checkout, install the package with:
 ```sh
 pip install .
 ```
-
-The package requires Python 3.13 or newer.
 
 ## Validator
 
@@ -31,6 +31,7 @@ Use `-h` or `--help` to see options for the CLI.
 For local development, install the project with Poetry:
 
 ```sh
+poetry lock
 poetry install
 ```
 
@@ -56,13 +57,13 @@ To read more about standard, see: <https://www.researchobject.org/ro-crate/>
 
 This section provides an overview of Resource Description Framework (RDF, see <https://www.w3.org/RDF/>) and Web Ontology Language (OWL, see <https://www.w3.org/TR/owl2-overview/>). It assumes the reader is familiar with the concept of JSON objects, given its established popularity as an API media type.
 
-RDF graphs are edge and node graphs comprised of an unsorted collection of _triples_: positive factual statements of the form: < subject > < predicate > < object >. For example: < paris > < capital of > < france >. Subjects are _entities_ typically referenced by _IRIs_, wheras objects can be _entities_ or _string literals_. Predicates are instances of _rdf:Property_, typically defined in some ontology somewhere.
+RDF graphs are edge and node graphs comprised of an unsorted collection of _triples_: positive factual statements of the form: < subject > < predicate > < object >. For example: < paris > < capital of > < france >. Subjects are _entities_ typically referenced by _IRIs_, whereas objects can be _entities_ or _string literals_. Predicates are instances of _rdf:Property_, typically defined in some ontology somewhere.
 
-RDF and OWL are designed to be used in the context of knowledge graphs, which often get acted upon by inference or reasoning engines. As such, they are designed to allow the inferenece of new statements based off of previous statements. The classes objects belong to are inferrabled by the properties used in stataments connecting the object.
+RDF and OWL are designed to be used in the context of knowledge graphs, which often get acted upon by inference or reasoning engines. As such, they are designed to allow the inference of new statements based off of previous statements. The classes objects belong to are inferrable by the properties used in statements connecting the object.
 
 RDF Graphs can be 'inconsistent' in that they contain statements (perhaps through inference) that disagree with one another, but this does not tell you what is wrong as you might expect from validation. I.e. 2 statements disagree with each other, not that 1 is incorrect because another is correct. Processes closer to traditional validation exist, which are typically described as checking conformance to patterns expressed in the graph (see <https://shex.io/> and  <https://www.w3.org/TR/shacl/>).
 
-Despite the abundance of 'Classes' that you will see in the typical RDF ontology, these features result in a design that is much closer in spirit to functional programming (see Category Theory) than object oriented programming.
+Despite the abundance of 'Classes' that you will see in the typical RDF ontology, these features result in a design that is much closer in spirit to functional programming (see [Category Theory](https://rnhmjoj.github.io/category-theory-for-programmers/src/init/table.html)) than object oriented programming.
 
 ### JSON-LD
 
@@ -88,7 +89,7 @@ A JSON-LD document is made up of an @context and a payload of json objects (whic
 }
 ```
 
-The design of the @context is to link terms (fields, classes, IDs) to described concepts on the web, while being flexible enough to accomodate pre-existing json structures that might be used by APIs. This @context can be used to map the data under @graph into an RDF graph.
+The design of the @context is to link terms (fields, classes, IDs) to described concepts on the web, while being flexible enough to accommodate pre-existing json structures that might be used by APIs. This @context can be used to map the data under @graph into an RDF graph.
 
 ```mermaid
 graph TB;
@@ -132,11 +133,11 @@ Submissions to BIA are typically made up of multiple images, supporting files an
 
 Submissions to the BIA can contain millions of images, and these images can have variations in the above metadata that is important to track on an image-by-image basis. For instance, we have submissions with ~1 million light microscopy images, and a corresponding ~1 million cell segmentation images: one for each light microscopy image.
 
-While it is possible to document this with json objects within the ro-crate-metadata.json, tabular data structures lend themselves to this kind of mass documentation. The BIA requires this kind of file manifest anyway, as a part of validating that the expected data is correctly tranferred. Since the BIA is focused on image and imaging metadata typically most files in a submission are images, so it not unreasonable to document the file-level metadata of most files within the stricter schema of tabular format (rather than the more free-form approach within the JSON-LD).
+While it is possible to document this with json objects within the ro-crate-metadata.json, tabular data structures lend themselves to this kind of mass documentation. The BIA requires this kind of file manifest anyway, as a part of validating that the expected data is correctly transferred. Since the BIA is focused on image and imaging metadata typically most files in a submission are images, so it not unreasonable to document the file-level metadata of most files within the stricter schema of tabular format (rather than the more free-form approach within the JSON-LD).
 
 The BIA refers to these manifests as File Lists. While they are in no way covered by the RO-Crate specification, the spec does allow for manifests and other metadata defining documents to be provided alongside the ro-crate-metadata.json.
 
-There are examples of [valid minium](test/validator/input_ro_crate/test_minimal_valid_ro_crate) and [valid typical](test/validator/input_ro_crate/test_typical_ro_crate) BIA RO-Crates in the tests.
+There are examples of [valid minimum](test/validator/input_ro_crate/test_minimal_valid_ro_crate) and [valid typical](test/validator/input_ro_crate/test_typical_ro_crate) BIA RO-Crates in the tests.
 
 ## BIA's conceptual model of imaging metadata
 
@@ -162,7 +163,7 @@ If you are not familiar with JSON-LD, there is a short introduction a the bottom
 
 ### JSON-LD validation
 
-It is non-trivial to fully validate JSON-LD efficiently because the format exists to satify two different approaches to data modelling. Individual consumers to JSON-LD documents are typically only interested in one of these and completely disregard the other, though the RO-Crate specification is an expception to this. A JSON-LD is:
+It is non-trivial to fully validate JSON-LD efficiently because the format exists to satisfy two different approaches to data modelling. Individual consumers to JSON-LD documents are typically only interested in one of these and completely disregard the other, though the RO-Crate specification is an exception to this. A JSON-LD is:
 
 1. A json document
 1. A graph of RDF triples ( see: <https://www.w3.org/RDF/>)
@@ -176,11 +177,11 @@ Typically this means that at least 2 of the 3 items need to be validated for bot
 
 Salient features that are validated (and whether they are more json or graph validation):
 
-1. Base RO-Crate & json ld validation: the JSON-LD is _'flattened compacted'_ with an @graph container, all fields have a context term defintion, root object, self-defining object exist, and these objects have various fields (see <https://www.researchobject.org/RO-Crate/specification>)
+1. Base RO-Crate & json ld validation: the JSON-LD is _'flattened compacted'_ with an @graph container, all fields have a context term definition, root object, self-defining object exist, and these objects have various fields (see <https://www.researchobject.org/ro-crate/specification>)
 1. Objects contain expected fields for that type of object (json*)
 1. Referenced IDs exist in the document (graph)
 1. The type of the object when referenced conforms to the expected type of the field (json*)
-1. Context contains expected term definitions and these are not changed (graph/JSON-LD)
+1. Context contains expected term definitions and the fields have not been mapped to different terms (graph/JSON-LD)
 1. No 2 objects use the same ID (json) - this isn't so much a requirement, but more a way to avoid something that is likely incorrect
 
 \* These could be graph based if we worried more about the shape of the graph surrounding these entities than the fields present on the json object.
@@ -205,14 +206,14 @@ roc_metadata-- contains --> go1;
 fl -- contains --> flr1
 ```
 
-The salient features in File List validation are all to do with existance checks of referenced objects.
+The salient features in File List validation are all to do with existence checks of referenced objects.
 
 Validation beings with checks on objects in the ro-crate-metadata.json that describe the File List:
 
 1. That an object of @type 'FileList' exists, and is linked to the study (json)
 1. That the schema of the File List contains column definitions that reference the required properties (graph)
 
-Then the contents of the file File List is checked with respect to itself, and the contents of the ro-crate-metadata.json:
+Then the contents of the File List is checked with respect to itself, and the contents of the ro-crate-metadata.json:
 
 1. That the columns names correspond to the schema definition the ro-crate-metadata.json.
 1. That the values in the file path column are unique.
