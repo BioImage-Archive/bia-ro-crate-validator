@@ -45,7 +45,7 @@ The BIA's data forms into chains of inputs and outputs to processes:
 The three main kinds of objects are:
 
 * Protocols that are descriptions of the plan followed during a scientific study.
-* Creation Processes which are the events which that produced data or physical specimens. For instance, a particular imaging session for a single image.
+* Creation Processes which are the events that produced data or physical specimens. For instance, a particular imaging session for a single image.
 * Two kinds of inputs or outputs to these creation processes: either physical objects such as a specimen, or digital data. However, we do sometimes also need to fall back to describing abstract classes of such things, rather than the individual elements.
 
 ### Detailed explanation on parent classes choice
@@ -74,7 +74,7 @@ Protocols are subclassed, and while we use _name_ and _description_ from schema.
 
 ### Model shortcuts
 
-We want to simplify the process of submitting data to the BIA. We have typically found users specify protocol and BioSample level information. Due to the vast scale of imaging experiments that is achievable today, producing millions of images using hundreds of samples grown and treated in batches, it is not always practical (or necessary) to require information be provided at this level.
+We want to simplify the process of submitting data to the BIA. We have typically found users specify Protocol and BioSample level information. Due to the vast scale of imaging experiments that is achievable today, producing millions of images using hundreds of samples grown and treated in batches, it is not always practical (or necessary) to require information be provided at this level.
 
 We therefore allow some simplifications with the assumptions that there exists one-to-one correspondence between the instances of some classes.
 
@@ -98,7 +98,7 @@ This corresponds well with REMBI fields on the Study object. It is less clear to
 
 ![pic 5](ro-crate-detailed-datamodels_5.png)
 
-The 'hasPart' relation is usually considered transitive, and the BFO classes used would suggest that if the data is a continuant, the Dataset and Study objects would also be BFO:Continuants (conversely, the 'hasPart' relation of an occurrent like a process would expected to be other process or temporal regions).
+The 'hasPart' relation is usually considered transitive, and the BFO classes used would suggest that if the data is a continuant, the Dataset and Study objects would also be BFO:Continuants (conversely, the 'hasPart' relation of an occurrent, like a process, would expected to be an other process or temporal regions).
 
 Note that this means the Study level object here is different to an ISA:Study or ISA:Investigation, that is a subclass of BFO:Process (a BFO:Occurant). As processes, these lend themselves to modelling the 'actions that were performed to create the output data' at various hierarchies, rather than the output data and the protocols (plans) that were followed for those actions.
 
