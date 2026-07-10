@@ -55,6 +55,9 @@ dev = [
 packages = [
     {include = "bia_ro_crate", from = "src"},
 ]
+include = [
+    {path = "src/bia_ro_crate/validator/profiles/*.json", format = ["sdist", "wheel"]},
+]
 
 [tool.poetry.dependencies]
 python = ">=3.13,<4.0"

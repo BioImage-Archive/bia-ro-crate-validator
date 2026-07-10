@@ -7,7 +7,11 @@ import typer
 from rich.logging import RichHandler
 
 from bia_ro_crate.models.ro_crate_generator_utils import generate_embeded_bia_context
-from bia_ro_crate.validator import bia_roc_validation
+from bia_ro_crate.validator import (
+    ValidationProfile,
+    ValidationResponseMode,
+    bia_roc_validation,
+)
 
 bia_ro_crate = typer.Typer(
     name="bia-ro-crate", context_settings={"help_option_names": ["-h", "--help"]}
@@ -51,15 +55,24 @@ def validate_ro_crate(
         ),
     ],
     report_json: bool = False,
+    profile: Annotated[
+        ValidationProfile | None,
+        typer.Option(
+            "--profile",
+            help="Apply an additional BIA application profile.",
+        ),
+    ] = None,
 ):
     if crate_path.is_file():
         crate_path = crate_path.parent
 
     if report_json:
-        report = bia_roc_validation(crate_path, "report")
+        report = bia_roc_validation(
+            crate_path, ValidationResponseMode.report, profile=profile
+        )
         print(json.dumps(report, indent=2))
     else:
-        bia_roc_validation(crate_path)
+        bia_roc_validation(crate_path, profile=profile)
 
 
 @bia_ro_crate.command("generate-context")

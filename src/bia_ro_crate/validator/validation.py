@@ -4,6 +4,7 @@ from pathlib import Path
 
 from bia_ro_crate.core.parser.ro_crate_parser import ROCrateParser
 from bia_ro_crate.core.validation import Severity
+from bia_ro_crate.validator.bia_submission_profile import BIASubmissionProfileValidator
 
 logger = logging.getLogger("__main__." + __name__)
 logging.getLogger().setLevel(logging.INFO)
@@ -13,6 +14,15 @@ logging.getLogger("rdflib").setLevel(logging.ERROR)
 class ValidationResponseMode(StrEnum):
     error = "error"
     report = "report"
+
+
+class ValidationProfile(StrEnum):
+    bia_submission = "bia-submission"
+
+
+PROFILE_VALIDATORS = {
+    ValidationProfile.bia_submission: BIASubmissionProfileValidator().validate,
+}
 
 
 def _log_issues(parser: ROCrateParser) -> None:
@@ -48,8 +58,15 @@ def _report_issues(parser: ROCrateParser) -> dict[str, None | dict[str, list[dic
 def bia_roc_validation(
     ro_crate_directory: Path,
     validation_mode: ValidationResponseMode = ValidationResponseMode.error,
+    profile: ValidationProfile | str | None = None,
 ):
-    ro_crate_parser = ROCrateParser(ro_crate_directory)
+    validation_profile = ValidationProfile(profile) if profile else None
+    profile_validator = (
+        PROFILE_VALIDATORS[validation_profile] if validation_profile else None
+    )
+    ro_crate_parser = ROCrateParser(
+        ro_crate_directory, profile_validator=profile_validator
+    )
 
     try:
         ro_crate_parser.parse()
@@ -60,3 +77,14 @@ def bia_roc_validation(
         _log_issues(ro_crate_parser)
         if validation_mode == ValidationResponseMode.report:
             return _report_issues(ro_crate_parser)
+
+
+def bia_submission_roc_validation(
+    ro_crate_directory: Path,
+    validation_mode: ValidationResponseMode = ValidationResponseMode.error,
+):
+    return bia_roc_validation(
+        ro_crate_directory,
+        validation_mode=validation_mode,
+        profile=ValidationProfile.bia_submission,
+    )

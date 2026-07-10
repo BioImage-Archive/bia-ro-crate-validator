@@ -1,0 +1,260 @@
+{
+  "profileKind": "RO-Crate application profile",
+  "profileName": "BIA Submission RO-Crate profile",
+  "profileUri": "https://w3id.org/bia/ro-crate/profile/bia-submission",
+  "profileVersion": "1.0",
+  "roCrateSpec": "https://w3id.org/ro/crate/1.1",
+  "description": "Profile for BioImage Archive submission RO-Crates. A conforming crate must contain at least one REMBI dataset or one MIFA dataset, and must describe submitted files through a file list linked to datasets.",
+  "datasetTypes": {
+    "rembiDataset": {
+      "@type": [
+        "Dataset",
+        "bia:Dataset",
+        "bia:RembiDataset"
+      ],
+      "description": "A dataset satisfying the REMBI metadata model."
+    },
+    "mifaDataset": {
+      "@type": [
+        "Dataset",
+        "bia:Dataset",
+        "bia:MifaDataset"
+      ],
+      "description": "A dataset satisfying the MIFA metadata model."
+    },
+    "otherDataset": {
+      "@type": [
+        "Dataset",
+        "bia:Dataset"
+      ],
+      "description": "A dataset that may be present in the crate but does not satisfy the minimum REMBI-or-MIFA submission requirement unless it also has bia:RembiDataset or bia:MifaDataset type."
+    }
+  },
+  "submissionRequirements": [
+    {
+      "id": "bia-submission/root-study",
+      "target": {
+        "@id": "./"
+      },
+      "severity": "required",
+      "requireTypes": [
+        "Dataset",
+        "bia:Study"
+      ],
+      "requiredProperties": [
+        "name",
+        "description",
+        "license",
+        "datePublished",
+        "hasPart",
+        "accessionId",
+        "author"
+      ],
+      "recommendedProperties": [
+        "acknowledgement",
+        "keywords",
+        "doi",
+        "seeAlso",
+        "relatedPublication",
+        "funding"
+      ]
+    },
+    {
+      "id": "bia-submission/at-least-one-rembi-or-mifa-dataset",
+      "target": {
+        "@type": "bia:Dataset"
+      },
+      "severity": "required",
+      "requireAtLeastOneType": [
+        "bia:RembiDataset",
+        "bia:MifaDataset"
+      ],
+      "requiredProperties": [
+        "name",
+        "description"
+      ],
+      "description": "A BIA submission must contain at least one dataset typed as bia:RembiDataset or bia:MifaDataset."
+    },
+    {
+      "id": "bia-submission/file-list-present",
+      "target": {
+        "@type": "bia:FileList"
+      },
+      "severity": "required",
+      "minimumCount": 1
+    },
+    {
+      "id": "bia-submission/file-list-file-path-column",
+      "target": {
+        "@type": "bia:FileList"
+      },
+      "severity": "required",
+      "requiredColumn": {
+        "columnName": "file_path",
+        "propertyUrl": "http://bia/filePath"
+      }
+    },
+    {
+      "id": "bia-submission/file-list-dataset-column",
+      "target": {
+        "@type": "bia:FileList"
+      },
+      "severity": "required",
+      "requiredColumn": {
+        "columnName": "dataset",
+        "propertyUrl": "http://schema.org/isPartOf"
+      },
+      "description": "Each file-list row should associate the file with a dataset @id."
+    }
+  ],
+  "rembiMetadataModel": {
+    "description": "Rules for datasets typed as bia:RembiDataset.",
+    "requirements": [
+      {
+        "id": "rembi/biosample-present",
+        "target": {
+          "@type": "bia:BioSample"
+        },
+        "severity": "required",
+        "minimumCount": 1,
+        "requiredProperties": [
+          "name",
+          "description",
+          "organismClassification"
+        ],
+        "requiredPropertyReferences": {
+          "organismClassification": {
+            "minimumCount": 1,
+            "targetType": "bia:Taxon"
+          }
+        },
+        "recommendedProperties": [
+          "experimentalVariableDescription",
+          "extrinsicVariableDescription",
+          "intrinsicVariableDescription",
+          "growthProtocol"
+        ]
+      },
+      {
+        "id": "rembi/taxon-required-properties",
+        "target": {
+          "@type": "bia:Taxon"
+        },
+        "severity": "required",
+        "minimumCount": 1,
+        "requiredProperties": [
+          "scientificName"
+        ],
+        "recommendedProperties": [
+          "commonName"
+        ]
+      },
+      {
+        "id": "rembi/specimen-imaging-preparation-present",
+        "target": {
+          "@type": "bia:SpecimenImagingPreparationProtocol"
+        },
+        "severity": "required",
+        "minimumCount": 1,
+        "requiredProperties": [
+          "name",
+          "description"
+        ],
+        "recommendedProperties": [
+          "signalChannelInformation"
+        ]
+      },
+      {
+        "id": "rembi/image-acquisition-present",
+        "target": {
+          "@type": "bia:ImageAcquisitionProtocol"
+        },
+        "severity": "required",
+        "minimumCount": 1,
+        "requiredProperties": [
+          "name",
+          "description",
+          "imagingInstrumentDescription",
+          "imagingMethodName"
+        ],
+        "recommendedProperties": [
+          "fbbiId"
+        ]
+      },
+      {
+        "id": "rembi/dataset-with-required-associations",
+        "target": {
+          "@type": "bia:RembiDataset"
+        },
+        "severity": "required",
+        "minimumCount": 1,
+        "requiredProperties": [
+          "associatedBiologicalEntity",
+          "associatedSpecimen",
+          "associatedSpecimenImagingPreparationProtocol",
+          "associatedImageAcquisitionProtocol"
+        ],
+        "optionalProperties": [
+          "associatedImageAnalysisMethod",
+          "associatedImageCorrelationMethod"
+        ],
+        "description": "At least one REMBI dataset must link to a biosample, specimen, specimen imaging preparation protocol, and image acquisition protocol."
+      },
+      {
+        "id": "rembi/file-list-image-row-present",
+        "target": {
+          "@type": "bia:FileList"
+        },
+        "severity": "required",
+        "requiredRow": {
+          "columnName": "type",
+          "acceptedValues": [
+            "bia:Image",
+            "http://bia/Image"
+          ]
+        },
+        "description": "The file list must contain at least one row describing an image. This profile normalizes the source requirement \"bia/image\" to the BIA class bia:Image."
+      }
+    ]
+  },
+  "mifaMetadataModel": {
+    "description": "Rules for datasets typed as bia:MifaDataset.",
+    "requirements": [
+      {
+        "id": "mifa/annotation-method-present",
+        "target": {
+          "@type": "bia:AnnotationMethod"
+        },
+        "severity": "required",
+        "minimumCount": 1,
+        "requiredProperties": [
+          "name",
+          "description",
+          "methodType"
+        ],
+        "recommendedProperties": [
+          "annotationCriteria",
+          "annotationCoverage",
+          "annotationSourceIndicator"
+        ]
+      },
+      {
+        "id": "mifa/annotation-dataset-present",
+        "target": {
+          "@type": "bia:MifaDataset"
+        },
+        "severity": "required",
+        "minimumCount": 1,
+        "requiredProperties": [
+          "associatedAnnotationMethod"
+        ],
+        "description": "At least one MIFA annotation dataset must link to an annotation method."
+      }
+    ]
+  },
+  "implementationNotes": [
+    "The profile is intentionally descriptive and machine-readable; validator support must implement cross-graph cardinality and file-list row checks.",
+    "The dataset types bia:RembiDataset and bia:MifaDataset may need to be added to the BIA JSON-LD context and ontology term list before strict validation can enforce them.",
+    "The file-list image-row rule requires a type column in addition to the required file_path and dataset columns."
+  ]
+}

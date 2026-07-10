@@ -26,6 +26,13 @@ This package contains validation logic for BIA RO-Crates. The validator can be r
 bia-ro-crate validate <path to the directory root of the RO-Crate>
 ```
 
+To validate the BIA submission profile, which requires a REMBI or MIFA dataset
+and their corresponding metadata rules, pass the profile explicitly:
+
+```sh
+bia-ro-crate validate --profile bia-submission <path to the directory root of the RO-Crate>
+```
+
 Use `-h` or `--help` to see options for the CLI.
 
 For local development, install the project with Poetry:

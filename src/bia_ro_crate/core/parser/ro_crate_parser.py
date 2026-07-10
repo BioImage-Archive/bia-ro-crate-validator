@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 import pandas as pd
@@ -16,6 +16,16 @@ from bia_ro_crate.core.validation.validation_error import ValidationError
 
 
 class ROCrateParser(Parser[BIASubmissionMetadata]):
+    def __init__(
+        self,
+        ro_crate_root: Path | str,
+        *,
+        profile_validator: Callable[[BIASubmissionMetadata], list[ValidationError]]
+        | None = None,
+    ) -> None:
+        self._profile_validator = profile_validator
+        super().__init__(ro_crate_root)
+
     def parse(self, target: Path | str | None = None) -> None:
         metadata_parser = JSONLDMetadataParser(self._ro_crate_root)
         try:
@@ -37,7 +47,12 @@ class ROCrateParser(Parser[BIASubmissionMetadata]):
         self._validate_crate_connectivity(metadata, file_list)
         self._raise_errors()
 
-        self._result = BIASubmissionMetadata(metadata=metadata, file_list=file_list)
+        submission_metadata = BIASubmissionMetadata(metadata=metadata, file_list=file_list)
+        if self._profile_validator is not None:
+            self._parse_issues.extend(self._profile_validator(submission_metadata))
+            self._raise_errors()
+
+        self._result = submission_metadata
 
     def _validate_crate_connectivity(
         self,
