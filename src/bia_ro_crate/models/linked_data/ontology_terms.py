@@ -126,6 +126,7 @@ class BIA(DefinedNamespace):
     featuresAnalysed: URIRef
     fiducialsUsed: URIRef
     filePath: URIRef
+    fundingStatement: URIRef
     growthProtocol: URIRef
     imageAcquisitionProtocol: URIRef
     imagingInstrumentDescription: URIRef

@@ -86,7 +86,6 @@ bia:acknowledgement a owl:DatatypeProperty;
     rdfs:domain bia:Study ;
     rdfs:range rdf:langString .
 
-
 bia:seeAlso a owl:ObjectProperty ;
     rdfs:label "see also"@en ;
     rdfs:comment "A link to an external resource alongside a description of the connection between the subject item and the link."@en ;

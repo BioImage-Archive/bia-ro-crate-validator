@@ -69,7 +69,7 @@ def generate_ro_crate_context(
         typer.Argument(
             help="Path to file where a the json-ld context should be written"
         ),
-    ],
+    ] = Path(__file__).parent / "models" / "linked_data" / "bia_ro_crate_context_NEW.jsonld",
 ):
     context = generate_embeded_bia_context()
 
