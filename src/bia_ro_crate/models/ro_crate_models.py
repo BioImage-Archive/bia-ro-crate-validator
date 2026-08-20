@@ -1,3 +1,5 @@
+from warnings import warn
+
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
 from rdflib import RDFS
 from typing_extensions import Annotated, Optional
@@ -11,6 +13,7 @@ from bia_ro_crate.models.linked_data.ontology_terms import (
 from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
 from bia_ro_crate.models.linked_data.pydantic_ld.LDModel import ObjectReference
 from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models.model_registry import register_ro_crate_class
 
 
 class ROCrateCreativeWork(ROCrateModel):
@@ -25,6 +28,7 @@ class ROCrateCreativeWork(ROCrateModel):
 # Studies and Publications
 
 
+@register_ro_crate_class
 class Study(ROCrateModel):
     name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     author: Annotated[
@@ -34,8 +38,8 @@ class Study(ROCrateModel):
     description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
     license: Annotated[AnyUrl, FieldContext(SCHEMA.license)] = Field()
     datePublished: Annotated[str, FieldContext(SCHEMA.datePublished)] = Field()
-    keywords: Annotated[list[str], FieldContext(SCHEMA.keywords, container="@set")] = Field(
-        default_factory=list
+    keywords: Annotated[list[str], FieldContext(SCHEMA.keywords, container="@set")] = (
+        Field(default_factory=list)
     )
     acknowledgement: Annotated[Optional[str], FieldContext(BIA.acknowledgement)] = (
         Field(default=None)
@@ -46,16 +50,16 @@ class Study(ROCrateModel):
     ] = Field()
     accessionId: Annotated[str, FieldContext(BIA.accessionId)] = Field()
     doi: Annotated[str | None, FieldContext(BIA.doi)] = Field(default=None)
-    seeAlso: Annotated[list[ObjectReference], FieldContext(RDFS.seeAlso, container="@set")] = Field(
-        default_factory=list
-    )
+    seeAlso: Annotated[
+        list[ObjectReference], FieldContext(RDFS.seeAlso, container="@set")
+    ] = Field(default_factory=list)
     relatedPublication: Annotated[
         list[ObjectReference],
         FieldContext(BIA.relatedPublication, is_id_field=True, container="@set"),
     ] = Field(default_factory=list)
-    funding: Annotated[list[ObjectReference], FieldContext(SCHEMA.funding, container="@set")] = Field(
-        default_factory=list
-    )
+    funding: Annotated[
+        list[ObjectReference], FieldContext(SCHEMA.funding, container="@set")
+    ] = Field(default_factory=list)
 
     model_config = ConfigDict(model_type=BIA.Study)
 
@@ -67,6 +71,7 @@ class Study(ROCrateModel):
         return value
 
 
+@register_ro_crate_class
 class Publication(ROCrateModel):
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
     authorNames: Annotated[Optional[str], FieldContext(BIA.authorNames)] = Field(
@@ -84,6 +89,7 @@ class Publication(ROCrateModel):
 # Contributors and Affiliations
 
 
+@register_ro_crate_class
 class Contributor(ROCrateModel):
     name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     address: Annotated[Optional[str], FieldContext(SCHEMA.address)] = Field(
@@ -96,15 +102,16 @@ class Contributor(ROCrateModel):
         list[ObjectReference],
         FieldContext(SCHEMA.memberOf, container="@set"),
     ] = Field(default_factory=list)
-    role: Annotated[list[str], FieldContext(BIA.role, container="@set")] = Field(default_factory=list)
-    email: Annotated[Optional[str], FieldContext(SCHEMA.email)] = Field(
-        default=None
+    role: Annotated[list[str], FieldContext(BIA.role, container="@set")] = Field(
+        default_factory=list
     )
+    email: Annotated[Optional[str], FieldContext(SCHEMA.email)] = Field(default=None)
 
     model_config = ConfigDict(model_type=BIA.Contributor)
 
 
-class Affiliaton(ROCrateModel):
+@register_ro_crate_class
+class Affiliation(ROCrateModel):
     name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     address: Annotated[Optional[str], FieldContext(SCHEMA.address)] = Field(
         default=None
@@ -116,11 +123,26 @@ class Affiliaton(ROCrateModel):
     model_config = ConfigDict(model_type=BIA.Affiliation)
 
 
+# Old class with typo in name.
+class Affiliaton(Affiliation):
+    def __init__(self, *args, **kwargs):
+        warn(
+            "'Affiliaton' is deprecated and will be removed in v1.0. "
+            "Use 'Affiliation' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
 # Grants and funding
 
 
+@register_ro_crate_class
 class Grant(ROCrateModel):
-    funder: Annotated[list[ObjectReference], FieldContext(SCHEMA.funder, container="@set")] = Field()
+    funder: Annotated[
+        list[ObjectReference], FieldContext(SCHEMA.funder, container="@set")
+    ] = Field()
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
     identifier: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(
         default=None
@@ -129,6 +151,7 @@ class Grant(ROCrateModel):
     model_config = ConfigDict(model_type=BIA.Grant)
 
 
+@register_ro_crate_class
 class FundingBody(ROCrateModel):
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
     identifier: Annotated[Optional[str], FieldContext(SCHEMA.identifier)] = Field(
@@ -141,6 +164,7 @@ class FundingBody(ROCrateModel):
 # External References
 
 
+@register_ro_crate_class
 class ExternalReference(ROCrateModel):
     description: Annotated[Optional[str], FieldContext(SCHEMA.description)] = Field(
         default=None
@@ -155,6 +179,7 @@ class ExternalReference(ROCrateModel):
 # Datasets and associations?
 
 
+@register_ro_crate_class
 class Dataset(ROCrateModel):
     name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     description: Annotated[Optional[str], FieldContext(SCHEMA.description)] = Field(
@@ -163,12 +188,16 @@ class Dataset(ROCrateModel):
 
     associatedBiologicalEntity: Annotated[
         list[ObjectReference],
-        FieldContext(BIA.associatedBiologicalEntity, is_id_field=True, container="@set"),
+        FieldContext(
+            BIA.associatedBiologicalEntity, is_id_field=True, container="@set"
+        ),
     ] = Field(default_factory=list)
 
     associatedSpecimenImagingPreparationProtocol: Annotated[
         list[ObjectReference],
-        FieldContext(BIA.associatedImagingPreparationProtocol, is_id_field=True, container="@set"),
+        FieldContext(
+            BIA.associatedImagingPreparationProtocol, is_id_field=True, container="@set"
+        ),
     ] = Field(default_factory=list)
 
     associatedSpecimen: Annotated[
@@ -188,12 +217,16 @@ class Dataset(ROCrateModel):
 
     associatedImageAcquisitionProtocol: Annotated[
         list[ObjectReference],
-        FieldContext(BIA.associatedImageAcquisitionProtocol, is_id_field=True, container="@set"),
+        FieldContext(
+            BIA.associatedImageAcquisitionProtocol, is_id_field=True, container="@set"
+        ),
     ] = Field(default_factory=list)
 
     associatedAnnotationMethod: Annotated[
         list[ObjectReference],
-        FieldContext(BIA.associatedAnnotationMethod, is_id_field=True, container="@set"),
+        FieldContext(
+            BIA.associatedAnnotationMethod, is_id_field=True, container="@set"
+        ),
     ] = Field(default_factory=list)
 
     associatedImageAnalysisMethod: Annotated[
@@ -203,7 +236,9 @@ class Dataset(ROCrateModel):
 
     associatedImageCorrelationMethod: Annotated[
         list[ObjectReference],
-        FieldContext(BIA.associatedCorrelationMethod, is_id_field=True, container="@set"),
+        FieldContext(
+            BIA.associatedCorrelationMethod, is_id_field=True, container="@set"
+        ),
     ] = Field(default_factory=list)
 
     associatedProtocol: Annotated[
@@ -211,13 +246,13 @@ class Dataset(ROCrateModel):
         FieldContext(BIA.associatedProtocol, is_id_field=True, container="@set"),
     ] = Field(default_factory=list)
 
-
     model_config = ConfigDict(model_type=BIA.Dataset)
 
 
 # File List
 
 
+@register_ro_crate_class
 class FileList(ROCrateModel):
     tableSchema: Annotated[
         ObjectReference,
@@ -227,6 +262,7 @@ class FileList(ROCrateModel):
     model_config = ConfigDict(model_type=BIA.FileList)
 
 
+@register_ro_crate_class
 class TableSchema(ROCrateModel):
     column: Annotated[
         list[ObjectReference],
@@ -236,6 +272,7 @@ class TableSchema(ROCrateModel):
     model_config = ConfigDict(model_type=CSVW.Schema)
 
 
+@register_ro_crate_class
 class Column(ROCrateModel):
     columnName: Annotated[str, FieldContext(CSVW.name)] = Field()
     propertyUrl: Annotated[Optional[str], FieldContext(CSVW.propertyUrl)] = Field(
@@ -248,6 +285,7 @@ class Column(ROCrateModel):
 # Images and AnnotationData
 
 
+@register_ro_crate_class
 class Image(ROCrateModel):
     resultOf: Annotated[
         ObjectReference, FieldContext(BIA.resultOf, is_id_field=True)
@@ -257,6 +295,7 @@ class Image(ROCrateModel):
     model_config = ConfigDict(model_type=BIA.Image)
 
 
+@register_ro_crate_class
 class AnnotationData(ROCrateModel):
     resultOf: Annotated[
         ObjectReference, FieldContext(BIA.resultOf, is_id_field=True)
@@ -269,18 +308,23 @@ class AnnotationData(ROCrateModel):
 # Specimen and CreationProcess
 
 
+@register_ro_crate_class
 class Specimen(ROCrateModel):
     biologicalEntity: Annotated[
-        list[ObjectReference], FieldContext(BIA.sampleOf, is_id_field=True, container="@set")
+        list[ObjectReference],
+        FieldContext(BIA.sampleOf, is_id_field=True, container="@set"),
     ] = Field(min_length=1)
     imagingPreparationProtocol: Annotated[
         list[ObjectReference],
-        FieldContext(BIA.imagingPreparationProtocol, is_id_field=True, container="@set"),
+        FieldContext(
+            BIA.imagingPreparationProtocol, is_id_field=True, container="@set"
+        ),
     ] = Field(min_length=1)
 
     model_config = ConfigDict(model_type=BIA.Specimen)
 
 
+@register_ro_crate_class
 class CreationProcess(ROCrateModel):
     imageAcquisitionProtocol: Annotated[
         list[ObjectReference],
@@ -290,13 +334,16 @@ class CreationProcess(ROCrateModel):
         Optional[ObjectReference], FieldContext(BIA.subject, is_id_field=True)
     ] = Field(default=None)
     protocol: Annotated[
-        list[ObjectReference], FieldContext(BIA.protocol, is_id_field=True, container="@set")
+        list[ObjectReference],
+        FieldContext(BIA.protocol, is_id_field=True, container="@set"),
     ] = Field(default_factory=list)
     annotationMethod: Annotated[
-        list[ObjectReference], FieldContext(BIA.annotationMethod, is_id_field=True, container="@set")
+        list[ObjectReference],
+        FieldContext(BIA.annotationMethod, is_id_field=True, container="@set"),
     ] = Field(default_factory=list)
     inputImage: Annotated[
-        list[ObjectReference], FieldContext(BIA.inputImage, is_id_field=True, container="@set")
+        list[ObjectReference],
+        FieldContext(BIA.inputImage, is_id_field=True, container="@set"),
     ] = Field(default_factory=list)
 
     model_config = ConfigDict(model_type=BIA.CreationProcess)
@@ -305,11 +352,10 @@ class CreationProcess(ROCrateModel):
 # BioSample and Taxon
 
 
+@register_ro_crate_class
 class BioSample(ROCrateModel):
     name: Annotated[Optional[str], FieldContext(SCHEMA.name)] = Field(default=None)
-    description: Annotated[
-        str, FieldContext(SCHEMA.description)
-    ] = Field()
+    description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
     experimentalVariableDescription: Annotated[
         list[str], FieldContext(BIA.experimentalVariableDescription, container="@set")
     ] = Field(default_factory=list)
@@ -329,6 +375,7 @@ class BioSample(ROCrateModel):
     model_config = ConfigDict(model_type=BIA.BioSample)
 
 
+@register_ro_crate_class
 class Taxon(ROCrateModel):
     commonName: Annotated[Optional[str], FieldContext(DARWINCORE.vernacularName)] = (
         Field(default=None)
@@ -348,10 +395,12 @@ class ProtocolMixin(BaseModel):
     description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
 
 
+@register_ro_crate_class
 class Protocol(ProtocolMixin, ROCrateModel):
     model_config = ConfigDict(model_type=BIA.Protocol)
 
 
+@register_ro_crate_class
 class SpecimenImagingPreparationProtocol(ProtocolMixin, ROCrateModel):
     signalChannelInformation: Annotated[
         list[ObjectReference],
@@ -361,6 +410,7 @@ class SpecimenImagingPreparationProtocol(ProtocolMixin, ROCrateModel):
     model_config = ConfigDict(model_type=BIA.SpecimenImagingPreparationProtocol)
 
 
+@register_ro_crate_class
 class SignalChannelInformation(ROCrateModel):
     signalContrastMechanismDescription: Annotated[
         Optional[str], FieldContext(BIA.signalContrastMechanismDescription)
@@ -378,18 +428,22 @@ class SignalChannelInformation(ROCrateModel):
     model_config = ConfigDict(model_type=BIA.SignalChannel)
 
 
+@register_ro_crate_class
 class ImageAcquisitionProtocol(ProtocolMixin, ROCrateModel):
     imagingInstrumentDescription: Annotated[
         str, FieldContext(BIA.imagingInstrumentDescription)
     ] = Field()
-    imagingMethodName: Annotated[list[str], FieldContext(BIA.imagingMethodName, container="@set")] = (
-        Field(default_factory=list)
+    imagingMethodName: Annotated[
+        list[str], FieldContext(BIA.imagingMethodName, container="@set")
+    ] = Field(default_factory=list)
+    fbbiId: Annotated[list[str], FieldContext(BIA.fbbiId, container="@set")] = Field(
+        default_factory=list
     )
-    fbbiId: Annotated[list[str], FieldContext(BIA.fbbiId, container="@set")] = Field(default_factory=list)
 
     model_config = ConfigDict(model_type=BIA.ImageAcquisitionProtocol)
 
 
+@register_ro_crate_class
 class AnnotationMethod(ProtocolMixin, ROCrateModel):
     annotationCriteria: Annotated[
         Optional[str], FieldContext(BIA.annotationCriteria)
@@ -403,9 +457,9 @@ class AnnotationMethod(ProtocolMixin, ROCrateModel):
     spatialInformation: Annotated[
         Optional[str], FieldContext(BIA.spatialInformation)
     ] = Field(default=None)
-    methodType: Annotated[list[str], FieldContext(BIA.annotationMethodType, container="@set")] = Field(
-        default_factory=list
-    )
+    methodType: Annotated[
+        list[str], FieldContext(BIA.annotationMethodType, container="@set")
+    ] = Field(default_factory=list)
     annotationSourceIndicator: Annotated[
         Optional[str], FieldContext(BIA.annotationSourceIndicator)
     ] = Field(default=None)
@@ -413,6 +467,7 @@ class AnnotationMethod(ProtocolMixin, ROCrateModel):
     model_config = ConfigDict(model_type=BIA.AnnotationMethod)
 
 
+@register_ro_crate_class
 class ImageAnalysisMethod(ProtocolMixin, ROCrateModel):
     featuresAnalysed: Annotated[Optional[str], FieldContext(BIA.featuresAnalysed)] = (
         Field(default=None)
@@ -421,6 +476,7 @@ class ImageAnalysisMethod(ProtocolMixin, ROCrateModel):
     model_config = ConfigDict(model_type=BIA.ImageAnalysisMethod)
 
 
+@register_ro_crate_class
 class ImageCorrelationMethod(ProtocolMixin, ROCrateModel):
     fiducialsUsed: Annotated[Optional[str], FieldContext(BIA.fiducialsUsed)] = Field(
         default=None
