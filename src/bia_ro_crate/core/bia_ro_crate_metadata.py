@@ -150,5 +150,5 @@ class BIAROCrateMetadata:
         type_order = {model_type: index for index, model_type in enumerate(self.TYPE_ORDER)}
         return sorted(
             self._graph_bia_entities.values(),
-            key=lambda entity: (type_order[type(entity)], entity.id),
+            key=lambda entity: (type_order.get(type(entity), float("inf")), entity.id),
         )
