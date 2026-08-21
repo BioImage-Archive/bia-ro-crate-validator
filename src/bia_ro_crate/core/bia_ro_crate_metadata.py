@@ -24,7 +24,8 @@ class BIAROCrateMetadata:
         ro_crate_models.ROCrateCreativeWork,
         ro_crate_models.Study,
         ro_crate_models.Contributor,
-        ro_crate_models.Affiliaton,
+        ro_crate_models.Affiliation,
+        ro_crate_models.Affiliaton, #TODO remove when class is deprecated in favour of correctly spelled Affiliation
         ro_crate_models.Publication,
         ro_crate_models.Grant,
         ro_crate_models.FundingBody,
