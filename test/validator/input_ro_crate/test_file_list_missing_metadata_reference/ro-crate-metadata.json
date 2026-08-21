@@ -136,6 +136,9 @@
         "@id": "schema:funding",
         "@container": "@set"
       },
+      "fundingStatement": {
+        "@id": "bia:fundingStatement"
+      },
       "growthProtocol": {
         "@id": "bia:growthProtocol"
       },

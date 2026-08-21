@@ -136,6 +136,9 @@
         "@id": "schema:funding",
         "@container": "@set"
       },
+      "fundingStatement": {
+        "@id": "bia:fundingStatement"
+      },
       "growthProtocol": {
         "@id": "bia:growthProtocol"
       },
@@ -248,6 +251,10 @@
       },
       "yearPublished": {
         "@id": "bia:yearPublished"
+      },
+      "additionalMetadata": {
+        "@id": "bia:additionalMetadata",
+        "@type": "@json"
       }
     }
   ],
@@ -286,14 +293,13 @@
           "@id": "#Annotation%20Dataset"
         }
       ],
-      "accessionId": "S-TEST123",
+      "accessionId": "",
       "keywords": [],
       "author": [
         {
           "@id": "https://orcid.org/9999-0001-2222-3333"
         }
-      ],
-      "doi": "doi:10.0000/S-TEST123"
+      ]
     },
     {
       "@id": "https://orcid.org/9999-0001-2222-3333",
