@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Annotated, Union
 
-from pydantic import AfterValidator, Field, field_validator
+from pydantic import AfterValidator, Field, field_validator, ConfigDict
 from rdflib import Graph, URIRef
 
 from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
@@ -66,3 +66,5 @@ class ROCrateModel(LDModel):
 
     def __hash__(self):
         return hash(self.id)
+
+    model_config = ConfigDict(extra='allow')
