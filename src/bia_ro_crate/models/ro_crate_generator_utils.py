@@ -7,6 +7,7 @@ from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
 from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models.model_registry import MODEL_REGISTRY
 
 
 def get_standard_bia_context_prefixes() -> dict[str, str]:
@@ -45,15 +46,4 @@ def generate_embeded_bia_context(prefixes: dict | None = None) -> dict:
    
 
 def get_all_ro_crate_classes() -> dict[URIRef, type[ROCrateModel]]:
-    ro_crate_pydantic_models = {
-        ro_crate_class.model_config["model_type"]: ro_crate_class
-        for name, ro_crate_class in inspect.getmembers(
-            ro_crate_models,
-            lambda member: (
-                inspect.isclass(member)
-                and member.__module__ == "bia_ro_crate.models.ro_crate_models"
-                and issubclass(member, ROCrateModel)
-            ),
-        )
-    }
-    return ro_crate_pydantic_models
+    return MODEL_REGISTRY
