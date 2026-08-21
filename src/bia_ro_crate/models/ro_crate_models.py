@@ -137,7 +137,7 @@ class Affiliaton(Affiliation):
 class Grant(ROCrateModel):
     funder: Annotated[
         list[ObjectReference], FieldContext(SCHEMA.funder, container="@set")
-    ] = Field()
+    ] = Field(default_factory=list)
     name: Annotated[str | None, FieldContext(SCHEMA.name)] = Field(default=None)
     identifier: Annotated[str | None, FieldContext(SCHEMA.identifier)] = Field(
         default=None
@@ -386,7 +386,7 @@ class Taxon(ROCrateModel):
 
 
 class ProtocolMixin(BaseModel):
-    name: Annotated[str | None, FieldContext(SCHEMA.name)] = Field()
+    name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
 
 
