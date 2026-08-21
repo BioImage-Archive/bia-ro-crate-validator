@@ -10,6 +10,7 @@ import pyld
 import json
 import requests
 from typing import DefaultDict
+import shutil
 
 def test_parser_to_graph_equivalent():
     ro_crate = (
@@ -144,8 +145,57 @@ def test_ro_crate_context_does_not_duplicate_term_labels():
 
     
         
-        
+def test_ordering_objects(tmpdir):
+    """
+    Tests that a differently ordered ro-crate ends up in same order after to_dict(ordered=True) for writing purposes.
+    """
+    ro_crate = (
+            Path(__file__).parent
+            / "validator"
+            / "input_ro_crate"
+            / "test_typical_ro_crate"
+        )
+    parser = JSONLDMetadataParser(ro_crate)
+    parser.parse()
+    metadata = parser.result
+
+    id_ordered = tmpdir / "write_id_ordered" 
+    type_ordered = tmpdir / "write_type_ordered" 
+
+    id_ordered.mkdir()
+    type_ordered.mkdir()
+
+    id_ordered_metadata = metadata.to_dict(ordered=False)
+    id_ordered_metadata["@graph"].reverse()
+
+    study_position = 0
+    reversed_roc_object = {}
+    for pos, roc_object in enumerate(id_ordered_metadata["@graph"]):
+        if roc_object["@id"] == "./":
+            roc_object["hasPart"].reverse()
+            for key in reversed(roc_object.keys()):
+                reversed_roc_object[key] = roc_object[key]
+            study_position = pos
+            break
+
+    id_ordered_metadata["@graph"][study_position] = reversed_roc_object
+    
+    with open(id_ordered / "ro-crate-metadata.json", 'w') as f:
+        f.write(json.dumps(id_ordered_metadata))
+
+    with open(type_ordered / "ro-crate-metadata.json", 'w') as f:
+        f.write(json.dumps(metadata.to_dict(ordered=True)))
+
+    shutil.copy2(ro_crate / "file_list.tsv", id_ordered / "file_list.tsv")
+    shutil.copy2(ro_crate / "file_list.tsv", type_ordered / "file_list.tsv")
+
+    id_ordered_parser = JSONLDMetadataParser(id_ordered)
+    id_ordered_parser.parse()
+    id_ordered_metadata = parser.result
+
+    type_ordered_parser = JSONLDMetadataParser(type_ordered)
+    type_ordered_parser.parse()
+    type_ordered_metadata = parser.result
 
 
-
-        
+    assert id_ordered_metadata.to_dict(ordered=True) == type_ordered_metadata.to_dict(ordered=True)

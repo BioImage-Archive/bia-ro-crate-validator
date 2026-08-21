@@ -9,6 +9,7 @@ from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
 from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
+from bia_ro_crate.models import ro_crate_models 
 from bia_ro_crate.models.ro_crate_models import FileList
 
 
@@ -19,6 +20,30 @@ class BIAROCrateMetadata:
     _metadata_path: Path
     _file_list_id: str
     DEFAULT_RO_CRATE_FILENAME: str = "ro-crate-metadata.json"
+    TYPE_ORDER = [
+        ro_crate_models.ROCrateCreativeWork,
+        ro_crate_models.Study,
+        ro_crate_models.Contributor,
+        ro_crate_models.Affiliation,
+        ro_crate_models.Affiliaton, #TODO remove when class is deprecated in favour of correctly spelled Affiliation
+        ro_crate_models.Publication,
+        ro_crate_models.Grant,
+        ro_crate_models.FundingBody,
+        ro_crate_models.ExternalReference,
+        ro_crate_models.Dataset,
+        ro_crate_models.ImageAcquisitionProtocol,
+        ro_crate_models.Specimen,
+        ro_crate_models.BioSample,
+        ro_crate_models.SpecimenImagingPreparationProtocol,
+        ro_crate_models.SignalChannelInformation,
+        ro_crate_models.AnnotationMethod,
+        ro_crate_models.ImageCorrelationMethod,
+        ro_crate_models.ImageAnalysisMethod,
+        ro_crate_models.Protocol,
+        ro_crate_models.FileList,
+        ro_crate_models.TableSchema,
+        ro_crate_models.Column
+    ]
 
     def __init__(
         self,
@@ -54,13 +79,15 @@ class BIAROCrateMetadata:
 
         return graph
 
-    def to_dict(self) -> dict:
+    def to_dict(self, ordered: bool = False) -> dict:
         context_dict = self._context.to_dict()
 
         graph_objects = [
             entity.model_dump(by_alias=True, mode="json")
-            for entity in sorted(
-                self._graph_bia_entities.values(), key=attrgetter("id")
+            for entity in (
+                self._ordering()
+                if ordered
+                else sorted(self._graph_bia_entities.values(), key=attrgetter("id"))
             )
         ]
 
@@ -119,3 +146,10 @@ class BIAROCrateMetadata:
 
     def get_file_list_entity(self):
         return self._graph_bia_entities[self._file_list_id]
+
+    def _ordering(self) -> list[ROCrateModel]:
+        type_order = {model_type: index for index, model_type in enumerate(self.TYPE_ORDER)}
+        return sorted(
+            self._graph_bia_entities.values(),
+            key=lambda entity: (type_order.get(type(entity), float("inf")), entity.id),
+        )
