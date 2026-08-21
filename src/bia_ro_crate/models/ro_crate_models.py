@@ -16,6 +16,7 @@ from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateMode
 from bia_ro_crate.models.model_registry import register_ro_crate_class
 
 
+@register_ro_crate_class
 class ROCrateCreativeWork(ROCrateModel):
     id: str = Field(alias="@id", default="ro-crate-metadata.json")
     type: str | list[str] = Field(alias="@type", default="CreativeWork")
