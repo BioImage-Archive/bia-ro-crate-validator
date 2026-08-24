@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+            - ubuntu-22.04
+            - macos-latest
+            - windows-latest
+        python-version:
+            - "3.13"
+            - "3.14"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: ${{ matrix.python-version }}
+      
+        - uses: abatilo/actions-poetry@v2
+
+        - name: Install Poetry
+          run: pip install poetry==2.4.1
+
+        - name: Install dependencies
+          run: poetry install
+
+        - name: Run tests
+          run: poetry run pytest
+
+        - name: Build package
+          run: poetry build
