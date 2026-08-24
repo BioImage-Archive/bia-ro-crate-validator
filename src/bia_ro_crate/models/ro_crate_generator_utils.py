@@ -1,8 +1,6 @@
-import inspect
 
 from rdflib import URIRef
 
-from bia_ro_crate.models import ro_crate_models
 from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
