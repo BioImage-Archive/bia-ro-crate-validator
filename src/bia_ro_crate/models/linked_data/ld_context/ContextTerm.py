@@ -38,10 +38,10 @@ class ContextTerm:
             (self.full_uri, self.field_name, self.type_mapping, self.is_reverse)
         )
 
-    def to_context_term_dict(self, prefixes: dict[str, str] | None = None) -> dict:
+    def to_context_term_dict(self, prefixes: dict[str, str] | None = None) -> dict[str, str]:
         context_term = {}
 
-        id = self.full_uri
+        id = str(self.full_uri)
 
         if prefixes:
             # TODO: handle trailing / or # sensibly to reconstruct the correct term uri when using the context
@@ -67,7 +67,7 @@ class ContextTerm:
 
     def to_mapping_dict(
         self, prefixes: dict[str, str] | None = None
-    ) -> dict[str, dict]:
+    ) -> dict[str, dict[str, str]]:
         context_term = self.to_context_term_dict(prefixes)
 
         return {self.field_name: context_term}
