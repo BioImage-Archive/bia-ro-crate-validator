@@ -16,6 +16,7 @@ class SCHEMA(DefinedNamespace):
     additionalType: URIRef
     affiliation: URIRef
     author: URIRef
+    dateModified: URIRef
     datePublished: URIRef
     description: URIRef
     email: URIRef
@@ -36,6 +37,7 @@ class SCHEMA(DefinedNamespace):
 
 class DUBLINCORE(DefinedNamespace):
     # Properties
+    abstract: URIRef
     identifier: URIRef
     hasFormat: URIRef
     conformsTo: URIRef

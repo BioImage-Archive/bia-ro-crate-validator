@@ -22,6 +22,16 @@ Though it is only shown for one Image, each can be connected to multiple ImageRe
 
 The rest of this document provides the details of why this structure was chosen, its relation to commonly used data design patterns, and how we try to simplify the process of creating the metadata for submissions through aggregative descriptions.
 
+## Study dates and protocol summaries
+
+`Study.datePublished` is required; `Study.dateModified` is optional. Both use native Python `datetime.date` values and their corresponding Schema.org predicates. Use `model_dump(mode="json")` or `model_dump_json()` to serialize dates as ISO strings.
+
+Pydantic's native date parsing applies, including midnight datetime and numeric timestamp coercion. Invalid calendar dates and non-midnight datetimes fail validation.
+
+All protocol models inherit optional text `abstract` from `ProtocolMixin`; `description` remains required. It maps to `http://purl.org/dc/terms/abstract`, deliberately overriding RO-Crate 1.1's `http://schema.org/abstract` mapping for that label. Existing crates using the base mapping must refresh their BIA context, even when no abstract value is supplied.
+
+Optional fields default to `None` and serialize as `null` unless `exclude_none=True` is used.
+
 ## Basic Formal Ontology
 
 [Basic Formal Ontology (BFO)](https://bfo-ontology.github.io/) is an 'upper ontology' that is often used in scientific domains as a parent structure for domain specific 'reference ontologies'.

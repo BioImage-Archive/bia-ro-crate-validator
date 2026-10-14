@@ -5,6 +5,9 @@
       "@type": {
         "@container": "@set"
       },
+      "abstract": {
+        "@id": "dc:abstract"
+      },
       "accessionId": {
         "@id": "bia:accessionId"
       },
@@ -97,6 +100,9 @@
         "@id": "http://rs.tdwg.org/dwc/terms/vernacularName"
       },
       "csvw": "http://www.w3.org/ns/csvw#",
+      "dateModified": {
+        "@id": "schema:dateModified"
+      },
       "datePublished": {
         "@id": "schema:datePublished"
       },
@@ -281,6 +287,7 @@
       "description": "",
       "license": "https://creativecommons.org/publicdomain/zero/1.0/",
       "datePublished": "2023-09-05",
+      "dateModified": "2023-09-06",
       "acknowledgement": null,
       "hasPart": [
         {
@@ -346,7 +353,8 @@
         "bia:AnnotationMethod"
       ],
       "name": "Cell boundary annotation.",
-      "description": "Hand annotated"
+      "description": "Hand annotated",
+      "abstract": "Cell boundary annotation."
     },
     {
       "@id": "#Imaging%20Method",
@@ -355,6 +363,7 @@
       ],
       "name": "Microscopy",
       "description": "Microscopy with a 2x magnification setting",
+      "abstract": "Microscopy",
       "imagingInstrumentDescription": "Microscope"
     },
     {
