@@ -41,6 +41,24 @@ Then run the CLI from the Poetry environment:
 poetry run bia-ro-crate validate <path to the directory root of the RO-Crate>
 ```
 
+## Development tests
+
+Ontology tests require JDK 17 or newer and a checksum-pinned ROBOT release (including
+HermiT). Install it once, then run the tests:
+
+```sh
+poetry run python scripts/ontology/check_ontology.py --install
+poetry run pytest --basetemp=artifacts/pytest-tmp
+```
+
+To check only the ontology, run `poetry run python scripts/ontology/check_ontology.py`.
+This checks BIA's axioms with external vocabulary declarations, not the full
+external ontologies. Imports require an explicit local pinning policy. Reports
+are written under `artifacts/ontology-consistency/`, with input hashes and stage results.
+Reasoner errors also fail the check; the pinned HermiT cannot handle every
+OWL datatype value (for example, five-digit years). Cardinalities above
+2,147,483,647 exceed the pinned OWLAPI integer range and are rejected.
+
 ## RO-Crate
 
 RO-Crate is a community supported standard to packaging research objects (RO) with their metadata.

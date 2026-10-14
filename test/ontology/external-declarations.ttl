@@ -1,0 +1,21 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix schema: <http://schema.org/> .
+
+# Declarations for the external vocabulary used by BIA's axioms, not imports
+# of those vocabularies' semantics. Unknown external terms must fail the check.
+schema:Action a owl:Class .
+schema:CreativeWork a owl:Class .
+schema:FundingScheme a owl:Class .
+schema:Grant a owl:Class .
+schema:MediaObject a owl:Class .
+schema:Organization a owl:Class .
+schema:Person a owl:Class .
+<http://purl.obolibrary.org/obo/IAO_0000030> a owl:Class .
+<http://www.w3.org/ns/csvw#Table> a owl:Class .
+
+schema:name a owl:AnnotationProperty .
+schema:citation a owl:ObjectProperty .
+schema:result a owl:ObjectProperty .
+schema:contentSize a owl:DatatypeProperty .
+schema:description a owl:DatatypeProperty .
+<http://purl.org/dc/terms/identifier> a owl:DatatypeProperty .
