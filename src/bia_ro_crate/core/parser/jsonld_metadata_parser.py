@@ -154,39 +154,106 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         """
         # Using pyld's JsonLdProcessor to handle the possible variablitiy in context definition structure
         jsonld_processor = pyld.jsonld.JsonLdProcessor()
-        mappings = jsonld_processor.process_context(
+        active_context = jsonld_processor.process_context(
             active_ctx={"mappings": {}}, local_ctx=context, options=None
-        )["mappings"]
+        )
+        mappings = active_context["mappings"]
+
+        # SimpleJSONLDContext cannot faithfully serialize these semantics.
+        # Refuse them rather than returning metadata with a changed meaning.
+        for keyword in (
+            "@base",
+            "@vocab",
+            "@language",
+            "@direction",
+            "previousContext",
+        ):
+            if active_context.get(keyword) is not None:
+                label = "@propagate" if keyword == "previousContext" else keyword
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context default: {label}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+        self._raise_errors()
 
         standard_bia_context = generate_standard_bia_context()
 
         terms = set()
         prefixes = {}
+        special_mappings = {}
         for term_key, mapping in mappings.items():
+            if mapping is None or mapping.get("@id") is None:
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context term disabled by null: {term_key}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
+            if mapping.get("protected") or any(
+                mapping.get(key) is not None
+                for key in ("@context", "@language", "@direction", "@index", "@nest")
+            ):
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context semantics for term: {term_key}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
+            expected = standard_bia_context.terms.get(term_key)
+            if expected is not None and (
+                str(expected.full_uri) != str(mapping.get("@id"))
+                or bool(expected.is_reverse) != bool(mapping.get("reverse"))
+            ):
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Term has been remapped in context: {term_key} must be mapped to {expected.full_uri}",
+                        location_description=f"At {term_key}",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
+            containers = mapping.get("@container", [])
+            if mapping.get("@id") in ("@id", "@type"):
+                special = {"@id": mapping["@id"]} if term_key != mapping["@id"] else {}
+                if containers:
+                    special["@container"] = (
+                        containers[0] if len(containers) == 1 else containers
+                    )
+                special_mappings[term_key] = special
+                continue
             if mapping.get("_prefix"):
+                if mapping.get("@type") or containers:
+                    self._parse_issues.append(
+                        ValidationError(
+                            message=f"Unsupported context prefix semantics: {term_key}",
+                            location_description="At @context",
+                            severity=Severity.ERROR,
+                        )
+                    )
+                    continue
                 prefixes[term_key] = mapping.get("@id")
             else:
                 term = ContextTerm.ContextTerm(
                     full_uri=mapping.get("@id"),
                     field_name=term_key,
                     is_reverse=mapping.get("reverse"),
+                    type_mapping=mapping.get("@type"),
+                    container=(containers[0] if len(containers) == 1 else containers)
+                    or None,
                 )
-                if (
-                    term_key in standard_bia_context.terms
-                    and standard_bia_context.terms[term_key] != term
-                ):
-                    self._parse_issues.append(
-                        ValidationError(
-                            message=f"Term has been remapped in context: {term_key} must be mapped to {standard_bia_context.terms[term_key].full_uri}",
-                            location_description=f"At {term_key}",
-                            severity=Severity.ERROR,
-                        )
-                    )
-                else:
-                    terms.add(term)
+                terms.add(term)
 
         self._raise_errors()
-        return SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
+        result = SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
+        result._special_mappings = special_mappings
+        return result
 
     def _pre_parse_validation(self, ro_crate_metadata_path: Path) -> None:
         self._id_reference_validation(ro_crate_metadata_path)
