@@ -85,12 +85,14 @@ class BIA(DefinedNamespace):
     Dataset: URIRef
     ExternalReference: URIRef
     FileList: URIRef
+    FileReference: URIRef
     FundingBody: URIRef
     Grant: URIRef
     Image: URIRef
     ImageAcquisitionProtocol: URIRef
     ImageAnalysisMethod: URIRef
     ImageCorrelationMethod: URIRef
+    ImageRepresentation: URIRef
     Protocol: URIRef
     Publication: URIRef
     SignalChannel: URIRef
@@ -121,7 +123,14 @@ class BIA(DefinedNamespace):
     biologicalEntityDescription: URIRef
     channelBiologicalEntity: URIRef
     channelContentDescription: URIRef
+    description: URIRef
+    digitalSizeC: URIRef
+    digitalSizeT: URIRef
+    digitalSizeX: URIRef
+    digitalSizeY: URIRef
+    digitalSizeZ: URIRef
     doi: URIRef
+    exemplarImage: URIRef
     experimentalVariableDescription: URIRef
     extrinsicVariableDescription: URIRef
     fbbiId: URIRef
@@ -131,25 +140,42 @@ class BIA(DefinedNamespace):
     fundingStatement: URIRef
     growthProtocol: URIRef
     imageAcquisitionProtocol: URIRef
+    imageFormat: URIRef
     imagingInstrumentDescription: URIRef
     imagingMethodName: URIRef
     imagingPreparationProtocol: URIRef
     inputImage: URIRef
     intrinsicVariableDescription: URIRef
+    ncbiId: URIRef
+    orcid: URIRef
+    physicalSizeT: URIRef
+    physicalSizeX: URIRef
+    physicalSizeY: URIRef
+    physicalSizeZ: URIRef
     protocol: URIRef
     pubmedId: URIRef
     relatedPublication: URIRef
+    representation: URIRef
     resultOf: URIRef
     role: URIRef
+    rorid: URIRef
     sampleOf: URIRef
+    seeAlso: URIRef
     signalChannelInformation: URIRef
     signalContrastMechanismDescription: URIRef
     sizeInBytes: URIRef
+    sourceImageName: URIRef
+    sourceImagePath: URIRef
     spatialInformation: URIRef
     subject: URIRef
+    timestepDuration: URIRef
+    totalSizeInBytes: URIRef
     transformationDescription: URIRef
     transformationMatrix: URIRef
     uri: URIRef
+    voxelSizeX: URIRef
+    voxelSizeY: URIRef
+    voxelSizeZ: URIRef
     website: URIRef
     xIndex: URIRef
     yIndex: URIRef

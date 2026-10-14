@@ -1,4 +1,5 @@
 import gzip
+from inspect import get_annotations
 from io import BytesIO
 
 import pytest
@@ -121,13 +122,22 @@ def test_bia_terms_have_label_and_comment(bia_ontology: Graph):
 
 
 def test_bia_namespace_terms(bia_ontology: Graph):
-    bia_terms = list(
-        term for term in bia_ontology.subjects(unique=True) if isinstance(term, URIRef)
-    )
+    prefix = "http://bia/"
+    ontology_terms = {
+        term
+        for term in bia_ontology.subjects(unique=True)
+        if isinstance(term, URIRef)
+        and str(term).startswith(prefix)
+        and str(term) != prefix
+    }
+    declared_terms = {
+        BIA[name]
+        for name, annotation in get_annotations(BIA).items()
+        if annotation is URIRef and not name.startswith("_")
+    }
 
-    for attribute in dir(BIA):
-        if not attribute.startswith("_") and isinstance(attribute, URIRef):
-            check.is_in(attribute, bia_terms, msg=f"{attribute} not in BIA ontology")
+    assert ontology_terms, "The bundled ontology contains no local BIA terms"
+    assert declared_terms == ontology_terms
 
 
 @pytest.mark.parametrize(
