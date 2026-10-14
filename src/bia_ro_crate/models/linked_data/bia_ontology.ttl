@@ -6,7 +6,7 @@
 @prefix jerm: <http://jermontology.org/ontology/JERMOntology#> .
 @prefix schema: <http://schema.org/> .
 @prefix dc: <http://purl.org/dc/terms/> .
-@prefix csvw: <https://www.w3.org/ns/csvw#> .
+@prefix csvw: <http://www.w3.org/ns/csvw#> .
 @prefix obo: <http://purl.obolibrary.org/obo/> .
 
 bia: a owl:Ontology ;
@@ -40,8 +40,8 @@ bia:accessionId a owl:DatatypeProperty;
     rdfs:label "accession id"@en ;
     rdfs:comment 
         """A string uniquely identifying an addition of a (new) item to the database in which it is stored. 
-        This property should be expected to be of type owl:InverseFunctionalProperty in the context of the database of the item (only).
-        E.g. S-BIAD1234 uniquiely identifies a study in the BioImage Archive, but might be appear as the accessionId of an unrelated item in a different database."""@en ;
+        An identity key using this property must be scoped to the database of the item.
+        E.g. S-BIAD1234 uniquely identifies a study in the BioImage Archive, but might be the accessionId of an unrelated item in a different database."""@en ;
     rdfs:subPropertyOf dc:identifier ;
     rdfs:range xsd:string .
 
@@ -108,7 +108,7 @@ bia:exemplarImage a owl:ObjectProperty;
 
 bia:Affiliation a owl:Class ;
     rdfs:label "affiliation"@en ;
-    rdfs:subClassOf schema:Organisation ;
+    rdfs:subClassOf schema:Organization ;
     rdfs:comment "An organsiation that a contributor is affiliated with."@en .
 
 bia:Contributor a owl:Class ;
@@ -126,17 +126,22 @@ bia:Contributor a owl:Class ;
 # - schema:email to capture contact emaol of contributors and affiliations
 # - schema:memberOf to capture affiliations of both Persons and Organizations (Contributors can be either)  
 
-bia:rorid a owl:DatatypeProperty , owl:InverseFunctionalProperty ;
-    rdfs:label "research organiszation registry id"@en ;
-    rdfs:comment "Research Organiszation Registry ID"@en ;
-    rdfs:range schema:URL ;
+bia:rorid a owl:DatatypeProperty ;
+    rdfs:label "Research Organisation Registry ID"@en ;
+    rdfs:comment "An identifier for an organisation in the Research Organisation Registry."@en ;
+    rdfs:range xsd:string ;
     rdfs:domain schema:Organization .
 
-bia:orcid a owl:DatatypeProperty , owl:InverseFunctionalProperty ;
-    rdfs:label "research organiszation registry id"@en ;
-    rdfs:comment "Research Organiszation Registry ID"@en ;
-    rdfs:range schema:URL ;
+bia:orcid a owl:DatatypeProperty ;
+    rdfs:label "ORCID iD"@en ;
+    rdfs:comment "An identifier for a researcher in the ORCID registry."@en ;
+    rdfs:range xsd:string ;
     rdfs:domain schema:Person .
+
+# Literal identifiers identify named individuals through OWL keys. Inverse-
+# functional properties in OWL 2 DL can only connect individuals, not literals.
+schema:Organization owl:hasKey ( bia:rorid ) .
+schema:Person owl:hasKey ( bia:orcid ) .
 
 # Use schema:memberOf instead?
 # bia:affiliation a owl:ObjectProperty ;
@@ -151,7 +156,7 @@ bia:orcid a owl:DatatypeProperty , owl:InverseFunctionalProperty ;
 bia:website a owl:DatatypeProperty ;
     rdfs:label "website"@en ;
     rdfs:comment "A link to a website which holds information about the subject."@en ;
-    rdfs:range schema:URL .
+    rdfs:range xsd:string .
 
 bia:role a owl:DatatypeProperty ;
     rdfs:label "role"@en ;
@@ -202,7 +207,7 @@ bia:ExternalReference a owl:Class ;
 # Classes
 
 bia:Dataset a owl:Class;
-    owl:subClassOf obo:IAO_0000030 ;
+    rdfs:subClassOf obo:IAO_0000030 ;
     rdfs:label "dataset"@en ;
     rdfs:comment "A logical collection of images that were created by following a similar set of protocols."@en .
 
