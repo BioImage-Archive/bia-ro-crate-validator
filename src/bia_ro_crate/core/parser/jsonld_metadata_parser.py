@@ -154,26 +154,76 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         """
         # Using pyld's JsonLdProcessor to handle the possible variablitiy in context definition structure
         jsonld_processor = pyld.jsonld.JsonLdProcessor()
-        mappings = jsonld_processor.process_context(
+        active_context = jsonld_processor.process_context(
             active_ctx={"mappings": {}}, local_ctx=context, options=None
-        )["mappings"]
+        )
+        mappings = active_context["mappings"]
+
+        # This representation cannot round-trip document defaults or scoped
+        # contexts. Reject them rather than silently changing RDF meaning.
+        for keyword in (
+            "@base",
+            "@vocab",
+            "@language",
+            "@direction",
+            "previousContext",
+        ):
+            if keyword in active_context:
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context default: {keyword}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+        self._raise_errors()
 
         standard_bia_context = generate_standard_bia_context()
 
         terms = set()
         prefixes = {}
+        type_terms = {}
         for term_key, mapping in mappings.items():
+            if (
+                mapping is None
+                or mapping.get("@id") is None
+                or mapping.get("protected")
+                or any(
+                    keyword in mapping
+                    for keyword in (
+                        "@context",
+                        "@language",
+                        "@direction",
+                        "@index",
+                        "@nest",
+                    )
+                )
+            ):
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context semantics for term: {term_key}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
             if mapping.get("_prefix"):
                 prefixes[term_key] = mapping.get("@id")
+            elif mapping.get("@id") == "@type":
+                type_terms[term_key] = "@set" in mapping.get("@container", [])
             else:
                 term = ContextTerm.ContextTerm(
                     full_uri=mapping.get("@id"),
                     field_name=term_key,
-                    is_reverse=mapping.get("reverse"),
+                    is_reverse=bool(mapping.get("reverse")),
+                    type_mapping=mapping.get("@type"),
+                    container=mapping.get("@container"),
                 )
-                if (
-                    term_key in standard_bia_context.terms
-                    and standard_bia_context.terms[term_key] != term
+                expected = standard_bia_context.terms.get(term_key)
+                # Coercions/containers can vary without remapping the property.
+                if expected is not None and (
+                    expected.full_uri != term.full_uri
+                    or bool(expected.is_reverse) != term.is_reverse
                 ):
                     self._parse_issues.append(
                         ValidationError(
@@ -186,7 +236,10 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
                     terms.add(term)
 
         self._raise_errors()
-        return SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
+        result = SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
+        for key, force_set in type_terms.items():
+            result.add_type_container(key, force_type_container=force_set)
+        return result
 
     def _pre_parse_validation(self, ro_crate_metadata_path: Path) -> None:
         self._id_reference_validation(ro_crate_metadata_path)

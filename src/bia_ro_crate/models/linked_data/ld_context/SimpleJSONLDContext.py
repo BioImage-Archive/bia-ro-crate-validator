@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Iterable
 
 from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
@@ -15,29 +16,42 @@ class SimpleJSONLDContext:
         rename_type_key: str | None = None,
         renamed_id_key: str | None = None,
     ):
-        self.prefixes = prefixes if prefixes else {}
-        self.terms = {term.field_name: term for term in terms} if terms else {}
+        self.prefixes = {}
+        self.terms = {}
         self._special_mappings: dict[str, object] = {}
+        for name, iri in (prefixes or {}).items():
+            self.add_prefix(name, iri)
+        for term in terms or ():
+            self.add_term(term)
 
         if force_type_container or rename_type_key:
-            self.add_type_container(key=rename_type_key or "@type", force_type_container=force_type_container)
+            self.add_type_container(
+                key=rename_type_key or "@type",
+                force_type_container=force_type_container,
+            )
 
         if renamed_id_key:
             self.add_id_rename(renamed_id_key)
 
     def to_dict(self) -> dict:
-        context_dict = self.prefixes.copy()
+        # Conventional namespaces imply a prefix; other IRIs need an explicit flag.
+        context_dict = {
+            prefix: iri if iri.endswith(("/", "#")) else {"@id": iri, "@prefix": True}
+            for prefix, iri in self.prefixes.items()
+        }
 
         for term in self.terms.values():
             context_dict |= term.to_mapping_dict(self.prefixes)
 
         # merge any special mappings (e.g. @type container entries or renamed @id)
         if getattr(self, "_special_mappings", None):
-            context_dict |= self._special_mappings
+            context_dict |= deepcopy(self._special_mappings)
 
         return dict(sorted(context_dict.items()))
 
-    def add_type_container(self, key: str = "@type", force_type_container: bool = False) -> None:
+    def add_type_container(
+        self, key: str = "@type", force_type_container: bool = False
+    ) -> None:
         type_expanded_term = {}
 
         if force_type_container:
@@ -47,20 +61,39 @@ class SimpleJSONLDContext:
             type_expanded_term["@id"] = "@type"
 
         if type_expanded_term:
+            self._check_definition(key, "_special_mappings", type_expanded_term)
             self._special_mappings[key] = type_expanded_term
 
     def add_id_rename(self, key: str) -> None:
         if key == "@id":
             return
-        self._special_mappings[key] = {"@id": "@id"}
+        mapping = {"@id": "@id"}
+        self._check_definition(key, "_special_mappings", mapping)
+        self._special_mappings[key] = mapping
+
+    def _check_definition(self, name, owner, value):
+        # Only @type can be defined as a keyword, to set its container.
+        if name.startswith("@") and (
+            owner != "_special_mappings" or name != "@type" or "@id" in value
+        ):
+            raise ValueError(f"Reserved context term: {name}")
+        for collection in ("prefixes", "terms", "_special_mappings"):
+            entries = getattr(self, collection)
+            if name in entries and (collection != owner or entries[name] != value):
+                raise ValueError(f"Context definition conflict: {name}")
 
     def add_prefix(self, short_term: str, uri: str) -> None:
+        if not isinstance(short_term, str) or not isinstance(uri, str):
+            raise TypeError("Prefix names and IRIs must be strings")
+        short_term, uri = str(short_term), str(uri)
+        self._check_definition(short_term, "prefixes", uri)
         self.prefixes[short_term] = uri
 
     def remove_prefix(self, prefix) -> None:
         self.prefixes.pop(prefix)
 
     def add_term(self, term: ContextTerm) -> None:
+        self._check_definition(term.field_name, "terms", term)
         self.terms[term.field_name] = term
 
     def remove_term(self, term: ContextTerm | str) -> None:
@@ -74,25 +107,12 @@ class SimpleJSONLDContext:
                 f"term {term} is not a string field name, nor a ContextTerm"
             )
 
-    def merge(
-        self, *contexts: Iterable["SimpleJSONLDContext"]
-    ) -> "SimpleJSONLDContext":
-        """Merge multiple SimpleJSONLDContext instances into a new one."""
-        merged_prefixes = self.prefixes.copy()
-        merged_terms = self.terms.copy()
-
-        context: SimpleJSONLDContext
-        for context in contexts:
-            for prefix, uri in context.prefixes.items():
-                if prefix in merged_prefixes and merged_prefixes[prefix] != uri:
-                    raise ValueError(f"Prefix conflict: {prefix} maps to multiple URIs")
-                merged_prefixes[prefix] = uri
-
-            existing_fields = {term.field_name for term in merged_terms.values()}
-            for term_field_name, term in context.terms.items():
-                if term_field_name not in existing_fields:
-                    merged_terms[term_field_name] = term
-
-        return SimpleJSONLDContext(
-            prefixes=merged_prefixes, terms=merged_terms.values()
-        )
+    def merge(self, *contexts: "SimpleJSONLDContext") -> "SimpleJSONLDContext":
+        """Merge detached definitions, rejecting names with conflicting meanings."""
+        merged = SimpleJSONLDContext()
+        for context in (self, *contexts):
+            for owner in ("prefixes", "terms", "_special_mappings"):
+                for name, value in getattr(context, owner).items():
+                    merged._check_definition(name, owner, value)
+                    getattr(merged, owner)[name] = deepcopy(value)
+        return merged

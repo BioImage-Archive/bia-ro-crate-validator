@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field
@@ -15,26 +16,47 @@ class ObjectReference(BaseModel):
 
 class LDModel(BaseModel):
     @classmethod
-    def generate_field_context(cls, compacted_ids: bool = False) -> list[ContextTerm]:
-        """
-        compacted_ids controls whether is_id_field is used to set "@type": "@id" in the generated context.
-        This setting should be used 
-        """
+    def generate_field_context(
+        cls, compacted_ids: bool = False, *, by_alias: bool = False
+    ) -> list[ContextTerm]:
+        """Generate property terms for Python names or serialisation aliases.
 
-        # TODO: add support for various json-ld profiles / other context generation settings
+        Enable ``compacted_ids`` for string-valued references that need JSON-LD
+        ``@id`` coercion. Leave it disabled for explicit ``{"@id": ...}`` objects.
+        Containers and reverse properties come from each field's FieldContext;
+        document-level settings belong to SimpleJSONLDContext.
+        """
         field_contexts = []
+        names = set()
+        serialised_names = Counter(
+            (
+                info.serialization_alias
+                if by_alias and info.serialization_alias is not None
+                else name
+            )
+            for name, info in cls.model_fields.items()
+            if info.exclude is not True
+        )
 
         for field_name, field_info in cls.model_fields.items():
-            field_context = next(
-                (m for m in field_info.metadata if isinstance(m, FieldContext)), None
-            )
+            contexts = [m for m in field_info.metadata if isinstance(m, FieldContext)]
+            if len(contexts) > 1:
+                raise ValueError(f"{cls.__name__}.{field_name}: multiple FieldContexts")
+            field_context = contexts[0] if contexts else None
 
             if field_context:
-
-                term = field_context.to_context_term(field_name)
-
-                if not compacted_ids and field_context.is_id_field:
-                    term.type_mapping = None
+                name = field_name
+                if by_alias and field_info.serialization_alias is not None:
+                    name = field_info.serialization_alias
+                if (
+                    not name
+                    or name.startswith("@")
+                    or name in names
+                    or serialised_names[name] > 1
+                ):
+                    raise ValueError(f"{cls.__name__}: conflicting context term {name}")
+                names.add(name)
+                term = field_context.to_context_term(name, compacted_ids=compacted_ids)
 
                 field_contexts.append(term)
 
