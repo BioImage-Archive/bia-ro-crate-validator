@@ -51,7 +51,7 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         crate_metadata_path = self._get_metadata_path(target)
         self._pre_parse_validation(crate_metadata_path)
 
-        with open(crate_metadata_path, "r") as jsonfile:
+        with crate_metadata_path.open(encoding="utf-8") as jsonfile:
             json_dict = json.load(jsonfile)
 
         context = self._parse_context(json_dict["@context"])
@@ -271,7 +271,12 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         """
 
         graph = Graph()
-        graph.parse(ro_crate_metadata_path, format="json-ld")
+        with ro_crate_metadata_path.open("rb") as stream:
+            graph.parse(
+                file=stream,
+                format="json-ld",
+                publicID=ro_crate_metadata_path.resolve().as_uri(),
+            )
 
         subjects = set(s for s in graph.subjects(unique=True) if isinstance(s, URIRef))
 
