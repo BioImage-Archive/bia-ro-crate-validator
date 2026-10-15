@@ -274,6 +274,30 @@ def test_parser_rejects_unrepresentable_contexts_instead_of_losing_meaning(
     assert any("Unsupported context" in str(error) for error in caught.value.exceptions)
 
 
+@pytest.mark.parametrize("settings", [{"@type": "@id"}, {"@container": "@list"}])
+def test_parser_rejects_prefix_value_semantics_it_cannot_preserve(tmp_path, settings):
+    from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
+
+    source = {"ex": {"@id": "urn:example:", "@prefix": True, **settings}}
+    assert jsonld.expand({"@context": source, "ex": ["urn:target"]})
+    with pytest.raises(ExceptionGroup) as caught:
+        JSONLDMetadataParser(tmp_path)._parse_context(source)
+    assert any("Unsupported context" in str(error) for error in caught.value.exceptions)
+
+
+@pytest.mark.parametrize(
+    "definition", [{"@id": "urn:replacement:", "@prefix": True}, "@type"]
+)
+def test_prefixes_and_keyword_aliases_cannot_remap_bia_properties(tmp_path, definition):
+    from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
+
+    with pytest.raises(ExceptionGroup) as caught:
+        JSONLDMetadataParser(tmp_path)._parse_context({"name": definition})
+    assert any(
+        "Term has been remapped" in str(error) for error in caught.value.exceptions
+    )
+
+
 def test_context_merge_preserves_keyword_settings_and_rejects_conflicts():
     first = SimpleJSONLDContext(
         terms=[ContextTerm("urn:link", "link", type_mapping="@id")],
