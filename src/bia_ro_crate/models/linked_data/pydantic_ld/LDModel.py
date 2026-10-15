@@ -2,11 +2,14 @@ from collections import Counter
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field
-from rdflib import OWL, RDF
 from rdflib.graph import Graph
 
 from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
+from bia_ro_crate.models.linked_data.pydantic_ld.model_consistency import (
+    OntologyConsistencyReport,
+    inspect_model,
+)
 from bia_ro_crate.models.linked_data.pydantic_ld.utils import id_validate
 
 
@@ -63,44 +66,26 @@ class LDModel(BaseModel):
         return field_contexts
 
     @classmethod
-    def validate_ontology_field_consistency(cls, ontology: Graph):
-        # TODO: make this collect error and list all issues
-        for field_name, field_info in cls.model_fields.items():
-            field_context = next(
-                (m for m in field_info.metadata if isinstance(m, FieldContext)), None
-            )
+    def validate_ontology_field_consistency(cls, ontology: Graph) -> None:
+        """Check declared field shapes and named-class implications recursively.
 
-            if field_context:
-                # Check uri exists in ontology
-                if field_context.uri not in ontology.subjects():
-                    raise KeyError(
-                        f"Field {field_name} has a context uri {field_context.uri} that is not in the ontology"
-                    )
-
-                # Check uri for field is a property
-                if not any(
-                    object_type
-                    in [
-                        OWL.ObjectProperty,
-                        OWL.DatatypeProperty,
-                        OWL.AnnotationProperty,
-                        RDF.Property,
-                    ]
-                    for object_type in ontology.objects(field_context.uri, RDF.type)
-                ):
-                    raise ValueError(
-                        f"Field {field_name} has a context uri {field_context.uri} that is not a property in the ontology"
-                    )
-
-            # TODO: add check that pydantic type is a reasonable match for the ontology type
-            # TODO: add check that none of the inferred types of the model are owl:disjoint with each other
-            # TODO: check for validation recursively in nested models, including that the inferred types from the parent model are compatible with the child model
+        Raise OntologyValidationError containing all discovered issues. This is
+        a static declaration check, not instance validation or an OWL reasoner.
+        Unsupported annotations/anonymous class or datatype expressions are
+        reported explicitly rather than assumed compatible.
+        """
+        cls.ontology_consistency_report(ontology).raise_for_errors()
 
     @classmethod
-    def is_valid(cls, ontology: Graph):
-        try:
-            cls.validate_ontology_field_consistency(ontology)
-        except Exception:
-            return False
+    def ontology_consistency_report(cls, ontology: Graph) -> OntologyConsistencyReport:
+        """Inspect declarations without rebuilding models or resolving references.
 
-        return True
+        ``ok`` means no errors in the supported static fragment. Notices describe
+        missing vocabulary coverage, unresolved targets and unchecked values.
+        Reused model/type contexts have one representative diagnostic path.
+        """
+        return inspect_model(cls, ontology, ObjectReference)
+
+    @classmethod
+    def is_valid(cls, ontology: Graph) -> bool:
+        return cls.ontology_consistency_report(ontology).ok
