@@ -42,6 +42,8 @@ class LDModel(BaseModel):
         )
 
         for field_name, field_info in cls.model_fields.items():
+            if field_info.exclude is True:
+                continue
             contexts = [m for m in field_info.metadata if isinstance(m, FieldContext)]
             if len(contexts) > 1:
                 raise ValueError(f"{cls.__name__}.{field_name}: multiple FieldContexts")
