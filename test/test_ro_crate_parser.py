@@ -102,6 +102,7 @@ def test_context_reconstruction_preserves_jsonld_expansion(tmp_path):
     "context",
     [
         {"@language": "en"},
+        {"@base": None},
         {"@propagate": False},
         {"disabled": None},
         {"ex": {"@id": "https://example.org/", "@prefix": True, "@type": "@id"}},

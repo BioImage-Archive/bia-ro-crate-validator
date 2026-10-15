@@ -168,7 +168,7 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
             "@direction",
             "previousContext",
         ):
-            if active_context.get(keyword) is not None:
+            if keyword in active_context:
                 label = "@propagate" if keyword == "previousContext" else keyword
                 self._parse_issues.append(
                     ValidationError(
