@@ -1,3 +1,6 @@
+import gzip
+from io import BytesIO
+
 import pytest
 import pytest_check as check
 from bia_ro_crate.models.linked_data.ontology_terms import (
@@ -140,9 +143,13 @@ def test_bia_namespace_terms(bia_ontology: Graph):
         ),
     ),
 )
-def test_other_namespace_terms(python_terms: Namespace, ontology_url: str):
-    ontology = Graph()
-    ontology.parse(ontology_url)
+def test_other_namespace_terms(
+    python_terms: Namespace, ontology_url: str, schema_ontology_loader
+):
+    if python_terms is SCHEMA:
+        ontology = schema_ontology_loader(ontology_url)
+    else:
+        ontology = Graph().parse(ontology_url)
     defined_terms = list(
         term for term in ontology.subjects(unique=True) if isinstance(term, URIRef)
     )
@@ -152,3 +159,17 @@ def test_other_namespace_terms(python_terms: Namespace, ontology_url: str):
             check.is_true(
                 attribute in defined_terms, msg=f"{attribute} not in {ontology_url}"
             )
+
+
+@pytest.mark.parametrize("compressed", [False, True])
+def test_schema_loader_accepts_plain_and_gzip_turtle(
+    schema_ontology_loader, monkeypatch, compressed
+):
+    data = b"<Thing> a <http://www.w3.org/2002/07/owl#Class> ."
+    if compressed:
+        data = gzip.compress(data)
+    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: BytesIO(data))
+    graph = schema_ontology_loader("https://example.org/vocab/schema.ttl")
+    assert set(graph) == {
+        (URIRef("https://example.org/vocab/Thing"), RDF.type, OWL.Class)
+    }
