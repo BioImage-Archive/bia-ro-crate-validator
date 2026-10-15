@@ -323,14 +323,18 @@ _:tail rdf:first :r; rdf:rest rdf:nil .
     checker.check_rdf_structure(graph)
 
 
-def test_java_input_preserves_lexical_forms_and_relative_iris(checker, tmp_path):
+@pytest.mark.parametrize("newline", ["\n", "\r\n"], ids=["lf", "crlf"])
+def test_java_input_preserves_lexical_forms_and_relative_iris(
+    checker, tmp_path, newline
+):
     path = tmp_path / "ontology.ttl"
     source = (
         PREFIXES + ':p a owl:DatatypeProperty . <individual> :p "01"^^xsd:integer .'
     )
-    path.write_text(source, encoding="utf-8")
+    source_bytes = source.replace("\n", newline).encode("utf-8")
+    path.write_bytes(source_bytes)
     prepared = prepare_input(checker, path)
-    assert source in prepared
+    assert source_bytes in prepared.encode("utf-8")
     merged = Graph().parse(data=prepared, format="turtle")
     assert set(merged.subjects(URIRef("urn:reasoning-test:p"), None)) == {
         URIRef((tmp_path / "individual").as_uri())
