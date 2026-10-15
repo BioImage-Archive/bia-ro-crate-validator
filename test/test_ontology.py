@@ -1,5 +1,13 @@
+import gzip
+from inspect import get_annotations
+from io import BytesIO
+
 import pytest
 import pytest_check as check
+from rdflib import Namespace, URIRef
+from rdflib.graph import Graph
+from rdflib.namespace import OWL, RDF, RDFS, XSD
+
 from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
@@ -8,28 +16,26 @@ from bia_ro_crate.models.linked_data.ontology_terms import (
     DUBLINCORE,
     SCHEMA,
 )
-from rdflib import Namespace, URIRef
-from rdflib.graph import Graph
-from rdflib.namespace import OWL, RDF, RDFS, XSD
 
-# TODO: Add a full owl consistency check using an owl reasoner,
-# Note our metaclasses have issues with the python version of owlready2, (to do with python class inheritance, rather than ontology)
-# So may need to use a java reasoner (e.g. Pellet or Hermit)
+
+def local_bia_terms(ontology: Graph):
+    return {
+        term
+        for term in ontology.subjects(unique=True)
+        if isinstance(term, URIRef) and str(term).startswith("http://bia/")
+    }
 
 
 def test_bia_terms_have_sensible_type(bia_ontology: Graph):
-
-    # Check terms in our ontology are an instance of Class, Property, or Ontology, but not any two disjoint classes in this list
-    for subject in bia_ontology.subjects(None, None):
-        subject_types = list(bia_ontology.objects(subject, RDF.type))
-
-        assert (
-            (OWL.Ontology in subject_types)
-            ^ (OWL.ObjectProperty in subject_types)
-            ^ (OWL.DatatypeProperty in subject_types)
-            ^ (OWL.AnnotationProperty in subject_types or RDFS.Class in subject_types)
-            ^ (OWL.Class in subject_types or RDFS.Class in subject_types)
-        )
+    for subject in local_bia_terms(bia_ontology):
+        types = set(bia_ontology.objects(subject, RDF.type))
+        kinds = types & {
+            OWL.Ontology,
+            OWL.ObjectProperty,
+            OWL.DatatypeProperty,
+            OWL.AnnotationProperty,
+        }
+        assert len(kinds) + bool(types & {OWL.Class, RDFS.Class}) == 1, subject
 
 
 def test_bia_properties_use_defined_terms(
@@ -105,7 +111,7 @@ def test_bia_properties_use_defined_terms(
 
 
 def test_bia_terms_have_label_and_comment(bia_ontology: Graph):
-    for subject in bia_ontology.subjects(None, None):
+    for subject in local_bia_terms(bia_ontology):
         # Skip the ontology itself
         if subject == URIRef("http://bia/"):
             continue
@@ -122,9 +128,10 @@ def test_bia_namespace_terms(bia_ontology: Graph):
         term for term in bia_ontology.subjects(unique=True) if isinstance(term, URIRef)
     )
 
-    for attribute in dir(BIA):
-        if not attribute.startswith("_") and isinstance(attribute, URIRef):
-            check.is_in(attribute, bia_terms, msg=f"{attribute} not in BIA ontology")
+    for name, annotation in get_annotations(BIA).items():
+        if annotation is URIRef and not name.startswith("_"):
+            term = BIA[name]
+            check.is_in(term, bia_terms, msg=f"{term} not in BIA ontology")
 
 
 @pytest.mark.parametrize(
@@ -140,15 +147,32 @@ def test_bia_namespace_terms(bia_ontology: Graph):
         ),
     ),
 )
-def test_other_namespace_terms(python_terms: Namespace, ontology_url: str):
-    ontology = Graph()
-    ontology.parse(ontology_url)
+def test_other_namespace_terms(
+    python_terms: Namespace, ontology_url: str, schema_ontology_loader
+):
+    if python_terms is SCHEMA:
+        ontology = schema_ontology_loader(ontology_url)
+    else:
+        ontology = Graph().parse(ontology_url)
     defined_terms = list(
         term for term in ontology.subjects(unique=True) if isinstance(term, URIRef)
     )
 
-    for attribute in dir(python_terms):
-        if not attribute.startswith("_") and isinstance(attribute, URIRef):
-            check.is_true(
-                attribute in defined_terms, msg=f"{attribute} not in {ontology_url}"
-            )
+    for name, annotation in get_annotations(python_terms).items():
+        if annotation is URIRef and not name.startswith("_"):
+            term = python_terms[name]
+            check.is_true(term in defined_terms, msg=f"{term} not in {ontology_url}")
+
+
+@pytest.mark.parametrize("compressed", [False, True])
+def test_schema_loader_accepts_plain_and_gzip_turtle(
+    schema_ontology_loader, monkeypatch, compressed
+):
+    data = b"<Thing> a <http://www.w3.org/2002/07/owl#Class> ."
+    if compressed:
+        data = gzip.compress(data)
+    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: BytesIO(data))
+    graph = schema_ontology_loader("https://example.org/vocab/schema.ttl")
+    assert set(graph) == {
+        (URIRef("https://example.org/vocab/Thing"), RDF.type, OWL.Class)
+    }
