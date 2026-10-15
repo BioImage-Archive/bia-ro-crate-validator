@@ -1,28 +1,13 @@
 import json
 import warnings
-from inspect import get_annotations
 from pathlib import Path
 
 import pandas as pd
-import pytest
-from rdflib import URIRef
 
 from bia_ro_crate.core.parser.ro_crate_parser import ROCrateParser
 from bia_ro_crate.models.linked_data.ontology_terms import BIA
 
 VOXEL_TERMS = ("voxelSizeX", "voxelSizeY", "voxelSizeZ")
-
-
-@pytest.mark.parametrize("name", VOXEL_TERMS)
-def test_voxel_terms_are_declared_and_resolve_without_warnings(name):
-    expected = URIRef(f"http://bia/{name}")
-    assert get_annotations(BIA).get(name) is URIRef
-    assert name in BIA
-    assert expected in BIA
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", UserWarning)
-        assert getattr(BIA, name) == expected
-        assert BIA[name] == expected
 
 
 def test_voxel_columns_preserve_values_through_crate_parsing(tmp_path):

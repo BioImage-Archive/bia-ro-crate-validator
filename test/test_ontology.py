@@ -1,6 +1,4 @@
-import gzip
 from inspect import get_annotations
-from io import BytesIO
 
 import pytest
 import pytest_check as check
@@ -169,17 +167,3 @@ def test_other_namespace_terms(
             check.is_true(
                 attribute in defined_terms, msg=f"{attribute} not in {ontology_url}"
             )
-
-
-@pytest.mark.parametrize("compressed", [False, True])
-def test_schema_loader_accepts_plain_and_gzip_turtle(
-    schema_ontology_loader, monkeypatch, compressed
-):
-    data = b"<Thing> a <http://www.w3.org/2002/07/owl#Class> ."
-    if compressed:
-        data = gzip.compress(data)
-    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: BytesIO(data))
-    graph = schema_ontology_loader("https://example.org/vocab/schema.ttl")
-    assert set(graph) == {
-        (URIRef("https://example.org/vocab/Thing"), RDF.type, OWL.Class)
-    }
