@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from urllib.parse import unquote, urlsplit
 
 import pandas as pd
+from pandas.api.types import is_bool
 from rdflib.compare import isomorphic
 
 from bia_ro_crate.core.bia_submission_metadata import BIASubmissionMetadata
@@ -78,8 +79,8 @@ def _cell_text(value, *, multivalued: bool) -> str:
         if "\x00" in value:
             raise ValueError("TSV values cannot contain NUL")
         return value
-    if isinstance(value, bool):
-        return str(value)
+    if is_bool(value):
+        return str(bool(value))
     if isinstance(value, Integral):
         return str(value)
     if isinstance(value, Real):
@@ -158,7 +159,7 @@ def _same_value(left, right) -> bool:
     )
     if left_missing or right_missing:
         return left_missing and right_missing
-    if isinstance(left, bool) != isinstance(right, bool):
+    if is_bool(left) != is_bool(right):
         return False
     # Convert numpy scalar numbers to Python scalars BEFORE comparing: numpy
     # can coerce a large integer to a rounded float and report false equality.

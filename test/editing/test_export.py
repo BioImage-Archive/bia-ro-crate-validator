@@ -2,6 +2,7 @@ import shutil
 from fractions import Fraction
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from bia_ro_crate.core.editing import export
@@ -76,6 +77,40 @@ def test_lossy_tsv_conversion_is_rejected_before_publication(
     ):
         editor.write_new(tmp_path / "export")
     assert not list(tmp_path.iterdir())
+
+
+def test_nullable_boolean_columns_preserve_values_and_missing_cells(
+    submission, new_column, tmp_path
+):
+    column = new_column.model_copy(
+        update={
+            "id": "#reviewed",
+            "columnName": "reviewed",
+            "propertyUrl": "https://example.org/reviewed",
+        }
+    )
+    frame = submission.file_list.data
+    values = pd.Series(
+        [True, False] + [pd.NA] * (len(frame) - 2),
+        index=frame.index,
+        dtype="boolean",
+    )
+    editor = submission.editor()
+    editor.add_column(column, values)
+    assert editor.snapshot().file_list.data[column.id].dtype == values.dtype
+    destination = editor.write_new(tmp_path / "export")
+    parser = ROCrateParser(destination)
+    parser.parse()
+    actual = parser.result.file_list.data[column.id]
+    assert actual.iloc[:2].tolist() == [True, False]
+    assert actual.iloc[2:].isna().all()
+
+
+def test_boolean_roundtrip_comparisons_do_not_accept_numeric_substitutes():
+    value = pd.Series([True], dtype="boolean").iloc[0]
+    assert export._same_value(value, True)
+    assert not export._same_value(value, 1)
+    assert not export._same_value(1, value)
 
 
 def test_existing_profile_still_rejects_invalid_metadata(submission, tmp_path):
