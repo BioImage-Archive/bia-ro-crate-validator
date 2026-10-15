@@ -177,6 +177,23 @@ def test_unmapped_aliases_cannot_overwrite_mapped_values(excluded):
         ) == [{"urn:value": [{"@value": "retained"}]}]
 
 
+def test_excluded_mapped_fields_cannot_conflict_with_serialised_aliases():
+    class Record(LDModel):
+        hidden: Annotated[str, FieldContext("urn:hidden")] = Field(
+            serialization_alias="value", exclude=True
+        )
+        visible: Annotated[str, FieldContext("urn:visible")] = Field(
+            serialization_alias="value"
+        )
+
+    record = Record(hidden="hidden", visible="retained")
+    context = SimpleJSONLDContext(terms=Record.generate_field_context(by_alias=True))
+    assert jsonld.expand(
+        {"@context": context.to_dict(), **record.model_dump(by_alias=True)}
+    ) == [{"urn:visible": [{"@value": "retained"}]}]
+    assert [term.field_name for term in Record.generate_field_context()] == ["visible"]
+
+
 def test_parser_preserves_coercions_and_container_profiles(tmp_path):
     from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
 
