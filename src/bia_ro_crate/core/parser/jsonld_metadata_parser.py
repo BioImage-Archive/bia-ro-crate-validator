@@ -207,7 +207,30 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
                     )
                 )
                 continue
+            expected = standard_bia_context.terms.get(term_key)
+            # Every definition form must preserve the BIA property and direction.
+            if expected is not None and (
+                str(expected.full_uri) != mapping["@id"]
+                or expected.is_reverse != bool(mapping.get("reverse"))
+            ):
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Term has been remapped in context: {term_key} must be mapped to {expected.full_uri}",
+                        location_description=f"At {term_key}",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
             if mapping.get("_prefix"):
+                if mapping.get("@type") is not None or mapping.get("@container"):
+                    self._parse_issues.append(
+                        ValidationError(
+                            message=f"Unsupported context value semantics for prefix: {term_key}",
+                            location_description="At @context",
+                            severity=Severity.ERROR,
+                        )
+                    )
+                    continue
                 prefixes[term_key] = mapping.get("@id")
             elif mapping.get("@id") == "@type":
                 type_terms[term_key] = "@set" in mapping.get("@container", [])
@@ -219,21 +242,7 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
                     type_mapping=mapping.get("@type"),
                     container=mapping.get("@container"),
                 )
-                expected = standard_bia_context.terms.get(term_key)
-                # Coercions/containers can vary without remapping the property.
-                if expected is not None and (
-                    expected.full_uri != term.full_uri
-                    or bool(expected.is_reverse) != term.is_reverse
-                ):
-                    self._parse_issues.append(
-                        ValidationError(
-                            message=f"Term has been remapped in context: {term_key} must be mapped to {standard_bia_context.terms[term_key].full_uri}",
-                            location_description=f"At {term_key}",
-                            severity=Severity.ERROR,
-                        )
-                    )
-                else:
-                    terms.add(term)
+                terms.add(term)
 
         self._raise_errors()
         result = SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
