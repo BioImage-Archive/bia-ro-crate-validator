@@ -43,3 +43,6 @@ coverage.xml
 
 # macOS
 .DS_Store
+
+# Local tools, reports and test output
+/artifacts/
