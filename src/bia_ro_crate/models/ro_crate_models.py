@@ -1,3 +1,4 @@
+from datetime import date
 from warnings import warn
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
@@ -38,7 +39,10 @@ class Study(ROCrateModel):
     ] = Field(min_length=1)
     description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
     license: Annotated[AnyUrl, FieldContext(SCHEMA.license)] = Field()
-    datePublished: Annotated[str, FieldContext(SCHEMA.datePublished)] = Field()
+    datePublished: Annotated[date, FieldContext(SCHEMA.datePublished)] = Field()
+    dateModified: Annotated[date | None, FieldContext(SCHEMA.dateModified)] = Field(
+        default=None
+    )
     keywords: Annotated[list[str], FieldContext(SCHEMA.keywords, container="@set")] = (
         Field(default_factory=list)
     )
@@ -389,6 +393,7 @@ class Taxon(ROCrateModel):
 class ProtocolMixin(BaseModel):
     name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
+    abstract: Annotated[str | None, FieldContext(SCHEMA.abstract)] = Field(default=None)
 
 
 @register_ro_crate_class
