@@ -46,21 +46,32 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         super().__init__(ro_crate_root=ro_crate_root, context=context)
 
     def parse(self, target: Path | str | None = None) -> None:
+        self._result = None
+        self._parse_issues = []
         if target is None:
             target = self.DEFAULT_RO_CRATE_FILENAME
         crate_metadata_path = self._get_metadata_path(target)
         self._pre_parse_validation(crate_metadata_path)
 
-        with open(crate_metadata_path, "r") as jsonfile:
+        with crate_metadata_path.open(encoding="utf-8") as jsonfile:
             json_dict = json.load(jsonfile)
 
-        context = self._parse_context(json_dict["@context"])
-        rocrate_objects_by_id = self._parse_objects(json_dict["@graph"], context)
+        self._parse_document(json_dict, base_path=crate_metadata_path.parent)
+
+    def parse_dict(self, document: dict, *, base_path: Path | None = None) -> None:
+        """Parse context and models in memory; file/profile checks run in parse()."""
+        self._result = None
+        self._parse_issues = []
+        self._parse_document(document, base_path=base_path or self._ro_crate_root)
+
+    def _parse_document(self, document: dict, *, base_path: Path) -> None:
+        context = self._parse_context(document["@context"])
+        rocrate_objects_by_id = self._parse_objects(document["@graph"], context)
 
         self._result = BIAROCrateMetadata(
             graph_bia_entities=rocrate_objects_by_id,
             context=context,
-            base_path=crate_metadata_path.parent,
+            base_path=base_path,
         )
 
     @staticmethod
@@ -154,39 +165,106 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         """
         # Using pyld's JsonLdProcessor to handle the possible variablitiy in context definition structure
         jsonld_processor = pyld.jsonld.JsonLdProcessor()
-        mappings = jsonld_processor.process_context(
+        active_context = jsonld_processor.process_context(
             active_ctx={"mappings": {}}, local_ctx=context, options=None
-        )["mappings"]
+        )
+        mappings = active_context["mappings"]
+
+        # SimpleJSONLDContext cannot faithfully serialize these semantics.
+        # Refuse them rather than returning metadata with a changed meaning.
+        for keyword in (
+            "@base",
+            "@vocab",
+            "@language",
+            "@direction",
+            "previousContext",
+        ):
+            if keyword in active_context:
+                label = "@propagate" if keyword == "previousContext" else keyword
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context default: {label}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+        self._raise_errors()
 
         standard_bia_context = generate_standard_bia_context()
 
         terms = set()
         prefixes = {}
+        special_mappings = {}
         for term_key, mapping in mappings.items():
+            if mapping is None or mapping.get("@id") is None:
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context term disabled by null: {term_key}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
+            if mapping.get("protected") or any(
+                mapping.get(key) is not None
+                for key in ("@context", "@language", "@direction", "@index", "@nest")
+            ):
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Unsupported context semantics for term: {term_key}",
+                        location_description="At @context",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
+            expected = standard_bia_context.terms.get(term_key)
+            if expected is not None and (
+                str(expected.full_uri) != str(mapping.get("@id"))
+                or bool(expected.is_reverse) != bool(mapping.get("reverse"))
+            ):
+                self._parse_issues.append(
+                    ValidationError(
+                        message=f"Term has been remapped in context: {term_key} must be mapped to {expected.full_uri}",
+                        location_description=f"At {term_key}",
+                        severity=Severity.ERROR,
+                    )
+                )
+                continue
+            containers = mapping.get("@container", [])
+            if mapping.get("@id") in ("@id", "@type"):
+                special = {"@id": mapping["@id"]} if term_key != mapping["@id"] else {}
+                if containers:
+                    special["@container"] = (
+                        containers[0] if len(containers) == 1 else containers
+                    )
+                special_mappings[term_key] = special
+                continue
             if mapping.get("_prefix"):
+                if mapping.get("@type") or containers:
+                    self._parse_issues.append(
+                        ValidationError(
+                            message=f"Unsupported context prefix semantics: {term_key}",
+                            location_description="At @context",
+                            severity=Severity.ERROR,
+                        )
+                    )
+                    continue
                 prefixes[term_key] = mapping.get("@id")
             else:
                 term = ContextTerm.ContextTerm(
                     full_uri=mapping.get("@id"),
                     field_name=term_key,
                     is_reverse=mapping.get("reverse"),
+                    type_mapping=mapping.get("@type"),
+                    container=(containers[0] if len(containers) == 1 else containers)
+                    or None,
                 )
-                if (
-                    term_key in standard_bia_context.terms
-                    and standard_bia_context.terms[term_key] != term
-                ):
-                    self._parse_issues.append(
-                        ValidationError(
-                            message=f"Term has been remapped in context: {term_key} must be mapped to {standard_bia_context.terms[term_key].full_uri}",
-                            location_description=f"At {term_key}",
-                            severity=Severity.ERROR,
-                        )
-                    )
-                else:
-                    terms.add(term)
+                terms.add(term)
 
         self._raise_errors()
-        return SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
+        result = SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
+        result._special_mappings = special_mappings
+        return result
 
     def _pre_parse_validation(self, ro_crate_metadata_path: Path) -> None:
         self._id_reference_validation(ro_crate_metadata_path)
@@ -204,7 +282,12 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         """
 
         graph = Graph()
-        graph.parse(ro_crate_metadata_path, format="json-ld")
+        with ro_crate_metadata_path.open("rb") as stream:
+            graph.parse(
+                file=stream,
+                format="json-ld",
+                publicID=ro_crate_metadata_path.resolve().as_uri(),
+            )
 
         subjects = set(s for s in graph.subjects(unique=True) if isinstance(s, URIRef))
 

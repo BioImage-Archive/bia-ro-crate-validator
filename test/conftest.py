@@ -1,4 +1,6 @@
+import gzip
 from pathlib import Path
+from urllib import request
 
 import pytest
 from rdflib.graph import Graph
@@ -22,12 +24,25 @@ def bia_ontology():
 
 
 @pytest.fixture(scope="session")
-def related_ontologies():
+def schema_ontology_loader():
+    def load(url="https://schema.org/version/latest/schemaorg-current-http.ttl"):
+        query = request.Request(url, headers={"Accept-Encoding": "identity"})
+        with request.urlopen(query, timeout=30) as response:
+            data = response.read()
+        # Accept plain and gzip bytes without relying on server negotiation.
+        if data.startswith(b"\x1f\x8b"):
+            data = gzip.decompress(data)
+        return Graph().parse(data=data, format="turtle", publicID=url)
+
+    return load
+
+
+@pytest.fixture(scope="session")
+def related_ontologies(schema_ontology_loader):
     rdf = Graph()
     rdf.parse("https://www.w3.org/1999/02/22-rdf-syntax-ns#")
 
-    schema = Graph()
-    schema.parse("https://schema.org/version/latest/schemaorg-current-http.ttl")
+    schema = schema_ontology_loader()
 
     dc = Graph()
     dc.parse(

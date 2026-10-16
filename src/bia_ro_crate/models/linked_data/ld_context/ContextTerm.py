@@ -6,7 +6,7 @@ class ContextTerm:
     field_name: str
     type_mapping: str | None
     is_reverse: bool
-    container: str | None
+    container: str | list[str] | None
 
     def __init__(
         self,
@@ -14,7 +14,7 @@ class ContextTerm:
         field_name: str,
         type_mapping: str | None = None,
         is_reverse: bool = False,
-        container: str | None = None,
+        container: str | list[str] | None = None,
     ):
         self.full_uri = URIRef(full_uri)
         self.field_name = field_name
@@ -26,17 +26,24 @@ class ContextTerm:
         if not isinstance(other, ContextTerm):
             return False
 
-        return all(
-            [
-                self.full_uri == other.full_uri,
-                self.field_name == other.field_name,
-            ]
+        return self._identity() == other._identity()
+
+    def _identity(self) -> tuple:
+        container = (
+            tuple(self.container)
+            if isinstance(self.container, list)
+            else self.container
+        )
+        return (
+            self.full_uri,
+            self.field_name,
+            self.type_mapping,
+            bool(self.is_reverse),
+            container,
         )
 
     def __hash__(self):
-        return hash(
-            (self.full_uri, self.field_name, self.type_mapping, self.is_reverse)
-        )
+        return hash(self._identity())
 
     def to_context_term_dict(self, prefixes: dict[str, str] | None = None) -> dict:
         context_term = {}
@@ -62,7 +69,13 @@ class ContextTerm:
         if self.type_mapping:
             context_term |= {"@type": self.type_mapping}
         if self.container:
-            context_term |= {"@container": self.container}
+            context_term |= {
+                "@container": (
+                    self.container.copy()
+                    if isinstance(self.container, list)
+                    else self.container
+                )
+            }
         return context_term
 
     def to_mapping_dict(

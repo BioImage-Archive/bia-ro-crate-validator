@@ -49,14 +49,20 @@ def bia_roc_validation(
     ro_crate_directory: Path,
     validation_mode: ValidationResponseMode = ValidationResponseMode.error,
 ):
+    """Validate a crate; report known issues while propagating unexpected failures."""
     ro_crate_parser = ROCrateParser(ro_crate_directory)
 
     try:
         ro_crate_parser.parse()
         ro_crate_parser.result
     except ExceptionGroup:
-        raise SystemExit(1)
+        if not any(
+            issue.severity is Severity.ERROR for issue in ro_crate_parser.issues
+        ):
+            raise
+        if validation_mode != ValidationResponseMode.report:
+            raise SystemExit(1)
     finally:
         _log_issues(ro_crate_parser)
-        if validation_mode == ValidationResponseMode.report:
-            return _report_issues(ro_crate_parser)
+    if validation_mode == ValidationResponseMode.report:
+        return _report_issues(ro_crate_parser)
