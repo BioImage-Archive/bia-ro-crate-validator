@@ -73,6 +73,7 @@ def test_context_reconstruction_preserves_jsonld_expansion(tmp_path):
         "Example": "https://example.org/Example",
         "name": {"@id": URIRef("http://schema.org/name")},
         "ex": {"@id": "https://example.org/base", "@prefix": True},
+        "http": {"@id": "https://example.org/", "@prefix": True},
         "prefixed": "ex:value",
         "literal": {"@id": "https://example.org/literal", "@type": "@json"},
         "reference": {"@id": "https://example.org/reference", "@type": "@id"},
@@ -102,6 +103,13 @@ def test_context_reconstruction_preserves_jsonld_expansion(tmp_path):
         "reverse": {"@id": "#target"},
     }
     parsed = JSONLDMetadataParser(tmp_path)._parse_context(context)
+    assert parsed.resolve_iri("name") == URIRef("http://schema.org/name")
+    assert parsed.resolve_iri("http://schema.org/name") == URIRef("http://schema.org/name")
+    assert parsed.resolve_iri("ex:value") == URIRef("https://example.org/basevalue")
+    assert parsed.resolve_iri("https://example.org/direct") == URIRef(
+        "https://example.org/direct"
+    )
+    assert parsed.resolve_iri("undefined") is None
     assert parsed.to_dict()["@type"] == {"@container": "@set"}
     actual = jsonld.expand(
         {"@context": json.loads(json.dumps(parsed.to_dict())), "@graph": [entity]}
@@ -246,3 +254,32 @@ def test_context_merge_conflicts_leave_both_inputs_unchanged(incoming):
         original.merge(incoming)
     assert original.to_dict() == before
     assert incoming.to_dict() == incoming_before
+
+
+def test_context_term_additions_are_atomic_and_detached():
+    context = SimpleJSONLDContext(
+        prefixes={"ex": "https://example.org/"}, renamed_id_key="identifier"
+    )
+    term = ContextTerm("https://example.org/value", "value", container="@set")
+    context.add_terms([term, term])
+    before = deepcopy(context.to_dict())
+    term.container = "@list"
+    assert context.to_dict() == before
+    for conflict in [
+        term,
+        ContextTerm(term.full_uri, "ex"),
+        ContextTerm(term.full_uri, "identifier"),
+    ]:
+        with pytest.raises(ValueError, match="Context definition conflict"):
+            context.add_terms(
+                [ContextTerm("https://example.org/note", "note"), conflict]
+            )
+        assert context.to_dict() == before
+    with pytest.raises(ValueError, match="Context definition conflict"):
+        context.add_terms(
+            [
+                ContextTerm("https://example.org/a", "duplicate"),
+                ContextTerm("https://example.org/b", "duplicate"),
+            ]
+        )
+    assert context.to_dict() == before

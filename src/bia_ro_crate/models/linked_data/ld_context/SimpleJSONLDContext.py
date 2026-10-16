@@ -1,5 +1,8 @@
 from copy import deepcopy
 from typing import Iterable
+from urllib.parse import urlsplit
+
+from rdflib import URIRef
 
 from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 
@@ -67,6 +70,37 @@ class SimpleJSONLDContext:
 
     def add_term(self, term: ContextTerm) -> None:
         self.terms[term.field_name] = term
+
+    def add_terms(self, terms: Iterable[ContextTerm]) -> None:
+        """Add detached terms together, rejecting conflicting definitions."""
+        additions = SimpleJSONLDContext()
+        for term in terms:
+            if not isinstance(term, ContextTerm):
+                raise TypeError("terms must contain ContextTerm instances")
+            if term.field_name.startswith("@"):
+                raise ValueError(
+                    f"Context term collides with a keyword: {term.field_name}"
+                )
+            previous = additions.terms.get(term.field_name)
+            if previous is not None and previous != term:
+                raise ValueError(f"Context definition conflict: {term.field_name}")
+            additions.add_term(term)
+        if additions.terms:
+            self.terms = self.merge(additions).terms
+
+    def resolve_iri(self, name: str) -> URIRef | None:
+        """Resolve a declared term, compact IRI or absolute IRI."""
+        if name in self.terms:
+            return self.terms[name].full_uri
+        if ":" in name:
+            prefix, suffix = name.split(":", 1)
+            if prefix in self.prefixes and not suffix.startswith("//"):
+                return URIRef(self.prefixes[prefix] + suffix)
+            if urlsplit(name).scheme and not any(
+                c.isspace() or ord(c) < 32 for c in name
+            ):
+                return URIRef(name)
+        return None
 
     def remove_term(self, term: ContextTerm | str) -> None:
         if isinstance(term, ContextTerm):
