@@ -6,7 +6,7 @@
         "@container": "@set"
       },
       "abstract": {
-        "@id": "dc:abstract"
+        "@id": "schema:abstract"
       },
       "accessionId": {
         "@id": "bia:accessionId"

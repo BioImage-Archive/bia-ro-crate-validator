@@ -119,7 +119,7 @@ def test_ro_crate_context_does_not_duplicate_term_labels():
     """
     Check that, in our context:
     - there aren't 2 fields mapping to the same URI 
-    - any base-term redefinition is exactly the declared BIA profile mapping
+    - we don't override terms that the base ro-crate context uses
 
     This test is complementary to test_ro_crate_round_trippable.
     """
@@ -135,22 +135,19 @@ def test_ro_crate_context_does_not_duplicate_term_labels():
     [inverse_map[str(term_map["@id"])].add(term_field_name) for term_field_name, term_map in standard_context.items()]
     [inverse_map[term_map].add(term_field_name) for term_field_name, term_map in ro_crate_context.items()]
 
-    # The BIA protocol summary uses DCMI abstract, rather than the base Schema term.
-    expected_redefinitions = {
-        "abstract": ("http://schema.org/abstract", "http://purl.org/dc/terms/abstract")
-    }
-    actual_redefinitions = {}
     for term_field_name, term_map in standard_context.items():
         ro_crate_context_term = ro_crate_context.get(term_field_name, {})
         term_id = str(term_map.get("@id"))
 
-        if ro_crate_context_term and term_id != ro_crate_context_term:
-            actual_redefinitions[term_field_name] = (ro_crate_context_term, term_id)
+        if ro_crate_context_term:
+            check.equal(
+                term_id,
+                ro_crate_context_term,
+                msg=f"{term_field_name} remapped from {ro_crate_context_term} to {term_id}",
+            )
 
         field_labels = inverse_map.get(term_id,[])
         check.equal(len(field_labels), 1, msg=f"{term_id} has more than 1 label: {field_labels}")
-
-    assert actual_redefinitions == expected_redefinitions
 
     
         

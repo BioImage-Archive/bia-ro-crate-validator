@@ -12,6 +12,7 @@ class SCHEMA(DefinedNamespace):
     ScholarlyArticle: URIRef
 
     # Properties
+    abstract: URIRef
     address: URIRef
     additionalType: URIRef
     affiliation: URIRef
@@ -37,7 +38,6 @@ class SCHEMA(DefinedNamespace):
 
 class DUBLINCORE(DefinedNamespace):
     # Properties
-    abstract: URIRef
     identifier: URIRef
     hasFormat: URIRef
     conformsTo: URIRef

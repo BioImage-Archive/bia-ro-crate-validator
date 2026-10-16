@@ -9,7 +9,6 @@ from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
     DARWINCORE,
-    DUBLINCORE,
     SCHEMA,
 )
 from bia_ro_crate.models.linked_data.pydantic_ld.FieldContext import FieldContext
@@ -394,7 +393,7 @@ class Taxon(ROCrateModel):
 class ProtocolMixin(BaseModel):
     name: Annotated[str, FieldContext(SCHEMA.name)] = Field()
     description: Annotated[str, FieldContext(SCHEMA.description)] = Field()
-    abstract: Annotated[str | None, FieldContext(DUBLINCORE.abstract)] = Field(default=None)
+    abstract: Annotated[str | None, FieldContext(SCHEMA.abstract)] = Field(default=None)
 
 
 @register_ro_crate_class
