@@ -1,3 +1,5 @@
+from datetime import date
+
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
@@ -13,7 +15,7 @@ def test_column_addition_updates_all_representations_without_aliasing(
     editor = submission.editor()
     values = [2**60 + 1] + [None] * (len(submission.file_list.data) - 1)
     expected = values.copy()
-    editor.add_column(new_column, values)
+    editor.add_file_list_column(new_column, values)
     values[0] = 0
     new_column.columnName = "caller mutation"
     result = editor.snapshot()
@@ -23,7 +25,7 @@ def test_column_addition_updates_all_representations_without_aliasing(
     assert result.file_list.schema[identifier].columnName == "voxel_x"
     assert result.metadata.get_object(identifier) == result.file_list.schema[identifier]
     table_id = result.metadata.get_file_list_entity().tableSchema.id
-    assert result.metadata.get_object(table_id).column[-1].id == identifier
+    assert identifier in {ref.id for ref in result.metadata.get_object(table_id).column}
     assert_frame_equal(
         result.file_list.data.drop(columns=identifier), submission.file_list.data
     )
@@ -47,7 +49,7 @@ def test_series_alignment_and_column_definition_stay_consistent(submission, new_
     editor = submission.editor()
     frame = submission.file_list.data
     values = pd.Series(range(len(frame)), index=frame.index[::-1], dtype="int64")
-    editor.add_column(new_column, values)
+    editor.add_file_list_column(new_column, values)
     editor.update_entity(new_column.id, {"columnName": "measurement"})
     result = editor.snapshot()
     assert (
@@ -79,9 +81,9 @@ def test_rejected_edits_preserve_the_whole_submission(
     before = editor.snapshot()
     with pytest.raises((ValueError, TypeError)):
         if operation == "length":
-            editor.add_column(new_column, [])
+            editor.add_file_list_column(new_column, [])
         elif operation == "labels":
-            editor.add_column(
+            editor.add_file_list_column(
                 new_column,
                 pd.Series(
                     range(len(before.file_list.data)),
@@ -89,7 +91,7 @@ def test_rejected_edits_preserve_the_whole_submission(
                 ),
             )
         elif operation == "collision":
-            editor.add_column(
+            editor.add_file_list_column(
                 new_column.model_copy(update={"id": "./"}),
                 [0] * len(before.file_list.data),
             )
@@ -121,28 +123,40 @@ def test_json_conversion_cannot_silently_change_metadata(submission, value):
     assert editor.snapshot().metadata.to_dict() == before
 
 
-def test_mutated_models_are_revalidated_on_entry(submission):
-    invalid = submission.metadata.get_object("./").model_copy(update={"name": []})
+@pytest.mark.parametrize(
+    "changes, error",
+    [
+        ({"name": []}, ValueError),
+        ({"type": "bia:Dataset"}, ValueError),
+        ({"type": ["bia:Study", "bia:Dataset"]}, ExceptionGroup),
+    ],
+)
+def test_mutated_models_are_revalidated_on_entry(submission, changes, error):
+    invalid = submission.metadata.get_object("./").model_copy(update=changes)
     submission.metadata.update_entity(invalid)
-    with pytest.raises(ValueError):
+    with pytest.raises(error):
         submission.editor()
 
 
-def test_context_additions_preserve_extras_and_reject_semantic_conflicts(submission):
+@pytest.mark.parametrize("value", ["Retain", date(2026, 10, 16)])
+def test_context_additions_preserve_extras_and_reject_semantic_conflicts(
+    submission, value
+):
     submission.metadata.get_context().remove_term("name")
     editor = submission.editor()
     term = ContextTerm("https://example.org/note", "note")
-    editor.update_entity("./", {"note": "Retain"}, context_terms=[term])
+    editor.update_entity("./", {"note": value}, context_terms=[term])
     editor.update_entity("./", {"name": "Reviewed study"})
-    assert editor.get_entity("./").note == "Retain"
+    assert editor.get_entity("./").note == value
+    assert type(editor.get_entity("./").note) is type(value)
     assert (
         str(editor.snapshot().metadata.get_context().terms["name"].full_uri)
         == "http://schema.org/name"
     )
     conflict = ContextTerm(term.full_uri, "note", container="@set")
-    with pytest.raises(ValueError, match="Context mapping conflict"):
+    with pytest.raises(ValueError, match="Context definition conflict"):
         editor.update_entity("./", {"note": "Changed"}, context_terms=[conflict])
-    assert editor.get_entity("./").note == "Retain"
+    assert editor.get_entity("./").note == value
 
 
 def test_transaction_resolves_forward_references_and_detaches_the_draft(submission):

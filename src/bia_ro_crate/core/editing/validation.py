@@ -2,7 +2,6 @@
 
 import json
 import math
-from collections.abc import Iterable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -11,9 +10,9 @@ from urllib.parse import urljoin, urlsplit
 from rdflib import RDF, BNode, Graph, URIRef
 
 from bia_ro_crate.core.bia_submission_metadata import BIASubmissionMetadata
+from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
 from bia_ro_crate.core.parser.tsv_metadata_parser import TSVMetadataParser
 from bia_ro_crate.models import ro_crate_models as models
-from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
     SimpleJSONLDContext,
 )
@@ -29,33 +28,22 @@ def _absolute_iri(value: object) -> bool:
     )
 
 
-def merge_context_terms(
-    context: SimpleJSONLDContext, terms: Iterable[ContextTerm]
-) -> None:
-    for term in terms:
-        if not isinstance(term, ContextTerm):
-            raise TypeError("context_terms must contain ContextTerm instances")
-        if term.field_name in context.prefixes or term.field_name.startswith("@"):
-            raise ValueError(
-                f"Context term collides with a prefix/keyword: {term.field_name}"
-            )
-        previous = context.terms.get(term.field_name)
-        if previous is not None and previous != term:
-            raise ValueError(f"Context mapping conflict: {term.field_name}")
-        context.add_term(deepcopy(term))
-
-
-def _ensure_model_terms(submission: BIASubmissionMetadata) -> None:
+def _ensure_consistent_model_terms(submission: BIASubmissionMetadata) -> None:
     context = submission.metadata.get_context()
-    for entity in submission.metadata.get_objects():
-        for term in type(entity).generate_field_context():
+    model_types = dict.fromkeys(
+        type(entity) for entity in submission.metadata.get_objects()
+    )
+    for model_type in model_types:
+        missing = []
+        for term in model_type.generate_field_context():
             previous = context.terms.get(term.field_name)
             if previous is None:
-                merge_context_terms(context, [term])
+                missing.append(term)
             elif previous.full_uri != term.full_uri or bool(
                 previous.is_reverse
             ) != bool(term.is_reverse):
                 raise ValueError(f"Model property is remapped: {term.field_name}")
+        context.add_terms(missing)
 
 
 def _validate_context(context: SimpleJSONLDContext) -> None:
@@ -89,15 +77,6 @@ def _validate_context(context: SimpleJSONLDContext) -> None:
             raise ValueError(f"Unsupported special context mapping: {key}")
 
 
-def _mapped(name: str, context: SimpleJSONLDContext) -> bool:
-    if name in context.terms:
-        return True
-    if ":" in name:
-        prefix = name.split(":", 1)[0]
-        return prefix in context.prefixes or _absolute_iri(name)
-    return False
-
-
 def _check_flat_value(value: Any, *, json_literal: bool = False) -> None:
     if json_literal:
         return  # Keys inside @json values are data, not JSON-LD properties.
@@ -123,7 +102,7 @@ def _check_flat_value(value: Any, *, json_literal: bool = False) -> None:
         )
 
 
-def _check_json_values(value: Any) -> None:
+def _check_value_serialises_to_json(value: Any) -> None:
     # Pydantic's JSON mode replaces non-finite floats with null. Reject them
     # before that conversion can silently discard a supplied metadata value.
     if isinstance(value, float) and not math.isfinite(value):
@@ -132,19 +111,20 @@ def _check_json_values(value: Any) -> None:
         if any(not isinstance(key, str) for key in value):
             raise ValueError("Metadata object keys must be strings")
         for item in value.values():
-            _check_json_values(item)
+            _check_value_serialises_to_json(item)
     elif isinstance(value, (list, tuple)):
         for item in value:
-            _check_json_values(item)
+            _check_value_serialises_to_json(item)
 
 
 def validate_entity(entity: ROCrateModel) -> ROCrateModel:
     if not isinstance(entity, ROCrateModel):
         raise TypeError("Expected an ROCrateModel")
-    # model_validate(instance) can trust a previously mutated model. Validate
-    # its data instead, including nested references, extras, and required fields.
+    # With the default revalidate_instances='never', model_validate(entity) can
+    # accept an existing instance even after its fields have become invalid.
+    # Validate its data instead, including nested references and extra fields.
     payload = deepcopy(entity.model_dump(mode="python", by_alias=True))
-    _check_json_values(payload)
+    _check_value_serialises_to_json(payload)
     return type(entity).model_validate(payload)
 
 
@@ -156,9 +136,20 @@ def _validate_structure(submission: BIASubmissionMetadata) -> None:
             raise ValueError(f"Graph key does not match object @id: {key}")
         objects[key] = validate_entity(entity)
 
-    _ensure_model_terms(submission)
+    _ensure_consistent_model_terms(submission)
     context = metadata.get_context()
     _validate_context(context)
+    document = metadata.to_dict()
+    json.dumps(document, allow_nan=False)
+    # Share context expansion and model selection with file parsing, but retain
+    # the Python models: JSON re-parsing changes untyped extras such as dates.
+    # Full profile validation still needs the serialised files during export.
+    parser = JSONLDMetadataParser(metadata.get_base_path())
+    parser.parse_dict(document)
+    for identifier, parsed in parser.result.get_object_lookup().items():
+        if type(parsed) is not type(objects[identifier]):
+            raise ValueError(f"Metadata model type changed: {identifier}")
+
     for entity in metadata.get_objects():
         payload = entity.model_dump(mode="json", by_alias=True)
         types = (
@@ -166,12 +157,12 @@ def _validate_structure(submission: BIASubmissionMetadata) -> None:
             if isinstance(payload["@type"], list)
             else [payload["@type"]]
         )
-        if any(not _mapped(label, context) for label in types):
+        if any(context.resolve_iri(label) is None for label in types):
             raise ValueError(f"Unmapped @type label on {entity.id}")
         for name, value in payload.items():
             if name in ("@id", "@type"):
                 continue
-            if not _mapped(name, context):
+            if context.resolve_iri(name) is None:
                 raise ValueError(
                     f"Unmapped field {name!r} on {entity.id}; supply a ContextTerm"
                 )
@@ -179,7 +170,6 @@ def _validate_structure(submission: BIASubmissionMetadata) -> None:
             _check_flat_value(
                 value, json_literal=bool(term and term.type_mapping == "@json")
             )
-    json.dumps(metadata.to_dict(), allow_nan=False)
 
     entity = metadata.get_file_list_entity()
     if not isinstance(entity, models.FileList) or file_list.ro_crate_id != entity.id:

@@ -27,7 +27,7 @@ def test_edit_export_and_reparse_preserve_metadata_and_all_column_links(
     before = original.metadata.to_dict()
     editor = original.editor()
     values = [0.25] * len(original.file_list.data)
-    editor.add_column(new_column, values)
+    editor.add_file_list_column(new_column, values)
     editor.update_entity(
         "./",
         {"name": "Reviewed study", "curationNote": "Retain this note"},
@@ -69,7 +69,7 @@ def test_lossy_tsv_conversion_is_rejected_before_publication(
     submission, new_column, value, tmp_path
 ):
     editor = submission.editor()
-    editor.add_column(
+    editor.add_file_list_column(
         new_column, [value] + [None] * (len(submission.file_list.data) - 1)
     )
     with pytest.raises(
@@ -96,7 +96,7 @@ def test_nullable_boolean_columns_preserve_values_and_missing_cells(
         dtype="boolean",
     )
     editor = submission.editor()
-    editor.add_column(column, values)
+    editor.add_file_list_column(column, values)
     assert editor.snapshot().file_list.data[column.id].dtype == values.dtype
     destination = editor.write_new(tmp_path / "export")
     parser = ROCrateParser(destination)

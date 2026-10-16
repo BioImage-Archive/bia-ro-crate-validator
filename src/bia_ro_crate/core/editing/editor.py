@@ -14,7 +14,7 @@ from bia_ro_crate.models import ro_crate_models as models
 from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateModel
 
-from .validation import merge_context_terms, validate_entity, validate_submission
+from .validation import validate_entity, validate_submission
 
 
 def _copy_series(series: pd.Series) -> pd.Series:
@@ -44,7 +44,6 @@ class SubmissionEditor:
 
     Use transaction() for mutually dependent edits, snapshot() for a detached
     checked copy, and write_new() for parser/profile-validated metadata export.
-    The editor has one owner; concurrent access requires external coordination.
     """
 
     def __init__(self, submission: BIASubmissionMetadata) -> None:
@@ -73,7 +72,7 @@ class SubmissionEditor:
     ) -> None:
         """Add a validated entity and its explicit context mappings together."""
         candidate = _copy_submission(self._state)
-        merge_context_terms(candidate.metadata.get_context(), context_terms)
+        candidate.metadata.get_context().add_terms(context_terms)
         candidate.metadata.add_entity(validate_entity(entity))
         self._accept(candidate)
 
@@ -96,17 +95,17 @@ class SubmissionEditor:
         if isinstance(entity, models.FileList) and "tableSchema" in changes:
             raise ValueError("Schema reassignment needs a dedicated migration")
         if isinstance(entity, models.TableSchema) and "column" in changes:
-            raise ValueError("Use add_column to change the selected schema")
+            raise ValueError("Use add_file_list_column to change the selected schema")
         payload = entity.model_dump(mode="python", by_alias=True)
         payload.update(deepcopy(dict(changes)))
         updated = type(entity).model_validate(payload)
-        merge_context_terms(candidate.metadata.get_context(), context_terms)
+        candidate.metadata.get_context().add_terms(context_terms)
         candidate.metadata.update_entity(updated)
         if entity_id in candidate.file_list.schema:
             candidate.file_list.schema[entity_id] = updated
         self._accept(candidate)
 
-    def add_column(
+    def add_file_list_column(
         self,
         column: models.Column,
         data: list | pd.Series,
@@ -126,7 +125,7 @@ class SubmissionEditor:
         column = validate_entity(column)
         frame = candidate.file_list.data
         if len(data) != len(frame):
-            raise ValueError("New column length does not match the dataframe")
+            raise ValueError(f"New column has {len(data)} rows; expected {len(frame)}")
         if column.id in candidate.metadata.get_object_lookup():
             raise ValueError(f"Entity with id {column.id} already exists")
         if column.columnName in candidate.file_list.get_column_names().values():
@@ -142,7 +141,7 @@ class SubmissionEditor:
         else:
             # Avoid implicit float inference losing integer precision in mixed lists.
             values = pd.Series(deepcopy(data), index=frame.index, dtype=object)
-        merge_context_terms(candidate.metadata.get_context(), context_terms)
+        candidate.metadata.get_context().add_terms(context_terms)
         candidate.file_list.add_column(column, values)
         candidate.metadata.add_entity(column)
         table_id = candidate.metadata.get_file_list_entity().tableSchema.id
@@ -173,7 +172,7 @@ class SubmissionEditor:
             child._defer_relationships = False
 
     def snapshot(self) -> BIASubmissionMetadata:
-        """Return a detached, in-memory-checked copy, not a profile certificate."""
+        """Return a detached, checked copy; full profile validation runs on export."""
         result = _copy_submission(self._state)
         validate_submission(result)
         return result

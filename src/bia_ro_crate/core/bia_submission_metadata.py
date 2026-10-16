@@ -21,6 +21,7 @@ class BIASubmissionMetadata:
 
     def editor(self) -> "SubmissionEditor":
         """Create an isolated editor; this submission remains unchanged."""
+        # Import here because SubmissionEditor also imports BIASubmissionMetadata.
         from bia_ro_crate.core.editing import SubmissionEditor
 
         return SubmissionEditor(self)

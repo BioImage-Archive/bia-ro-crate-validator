@@ -46,6 +46,8 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         super().__init__(ro_crate_root=ro_crate_root, context=context)
 
     def parse(self, target: Path | str | None = None) -> None:
+        self._result = None
+        self._parse_issues = []
         if target is None:
             target = self.DEFAULT_RO_CRATE_FILENAME
         crate_metadata_path = self._get_metadata_path(target)
@@ -54,13 +56,22 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         with crate_metadata_path.open(encoding="utf-8") as jsonfile:
             json_dict = json.load(jsonfile)
 
-        context = self._parse_context(json_dict["@context"])
-        rocrate_objects_by_id = self._parse_objects(json_dict["@graph"], context)
+        self._parse_document(json_dict, base_path=crate_metadata_path.parent)
+
+    def parse_dict(self, document: dict, *, base_path: Path | None = None) -> None:
+        """Parse context and models in memory; file/profile checks run in parse()."""
+        self._result = None
+        self._parse_issues = []
+        self._parse_document(document, base_path=base_path or self._ro_crate_root)
+
+    def _parse_document(self, document: dict, *, base_path: Path) -> None:
+        context = self._parse_context(document["@context"])
+        rocrate_objects_by_id = self._parse_objects(document["@graph"], context)
 
         self._result = BIAROCrateMetadata(
             graph_bia_entities=rocrate_objects_by_id,
             context=context,
-            base_path=crate_metadata_path.parent,
+            base_path=base_path,
         )
 
     @staticmethod

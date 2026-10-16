@@ -52,6 +52,27 @@ def test_ro_crate_parser_accepts_metadata_entity_referenced_from_file_list() -> 
     assert not any("#specimen_1" in message for message in whole_crate_messages)
 
 
+def test_failed_in_memory_parse_does_not_expose_an_earlier_result():
+    path = get_test_ro_crate_path("test_minimal_valid_ro_crate")
+    parser = JSONLDMetadataParser(path)
+    document = json.loads((path / "ro-crate-metadata.json").read_text(encoding="utf-8"))
+    parser.parse_dict(document)
+    assert parser.result.get_object("./") is not None
+    with pytest.raises(KeyError):
+        parser.parse_dict({})
+    with pytest.raises(RuntimeError, match="prior to accessing result"):
+        _ = parser.result
+    invalid = deepcopy(document)
+    study = next(entity for entity in invalid["@graph"] if entity["@id"] == "./")
+    expected_name = study["name"]
+    study["name"] = []
+    with pytest.raises(ExceptionGroup):
+        parser.parse_dict(invalid)
+    parser.parse_dict(document)
+    assert parser.result.get_object("./").name == expected_name
+    assert parser.issues == []
+
+
 def test_ro_crate_parser_rejects_missing_metadata_entity_referenced_from_file_list() -> None:
     parser = ROCrateParser(
         get_test_ro_crate_path("test_file_list_missing_metadata_reference")
