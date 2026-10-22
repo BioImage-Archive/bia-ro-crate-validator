@@ -5,6 +5,9 @@
       "@type": {
         "@container": "@set"
       },
+      "abstract": {
+        "@id": "schema:abstract"
+      },
       "accessionId": {
         "@id": "http://SOME/OTHER/PROPERTY"
       },
@@ -97,6 +100,9 @@
         "@id": "http://rs.tdwg.org/dwc/terms/vernacularName"
       },
       "csvw": "http://www.w3.org/ns/csvw#",
+      "dateModified": {
+        "@id": "schema:dateModified"
+      },
       "datePublished": {
         "@id": "schema:datePublished"
       },
