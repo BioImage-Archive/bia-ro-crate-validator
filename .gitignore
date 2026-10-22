@@ -44,5 +44,5 @@ coverage.xml
 # macOS
 .DS_Store
 
-# Local tools, reports and test output
+# Local validation evidence and isolated tool environments
 /artifacts/
