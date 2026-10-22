@@ -50,7 +50,9 @@ jobs:
           run: poetry run python scripts/ontology/check_ontology.py --install
 
         - name: Run tests
-          run: poetry run pytest --basetemp=artifacts/pytest-tmp
+          env:
+            PYTEST_DEBUG_TEMPROOT: ${{ github.workspace }}/artifacts
+          run: poetry run pytest
 
         - name: Build package
           run: poetry build

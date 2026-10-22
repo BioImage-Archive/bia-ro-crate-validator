@@ -1,6 +1,10 @@
 import gzip
+import subprocess
+import sys
 from inspect import get_annotations
 from io import BytesIO
+from pathlib import Path
+from urllib.request import urlopen
 
 import pytest
 import pytest_check as check
@@ -27,15 +31,18 @@ def local_bia_terms(ontology: Graph):
 
 
 def test_bia_terms_have_sensible_type(bia_ontology: Graph):
+    property_types = {OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty}
     for subject in local_bia_terms(bia_ontology):
         types = set(bia_ontology.objects(subject, RDF.type))
-        kinds = types & {
-            OWL.Ontology,
-            OWL.ObjectProperty,
-            OWL.DatatypeProperty,
-            OWL.AnnotationProperty,
+        kinds = {
+            OWL.Class if kind == RDFS.Class else kind
+            for kind in types
+            & (property_types | {OWL.Ontology, OWL.Class, RDFS.Class, RDF.Property})
         }
-        assert len(kinds) + bool(types & {OWL.Class, RDFS.Class}) == 1, subject
+        # A generic property declaration can accompany a specific OWL property.
+        if kinds & property_types:
+            kinds.discard(RDF.Property)
+        assert len(kinds) == 1, subject
 
 
 def test_bia_properties_use_defined_terms(
@@ -176,3 +183,37 @@ def test_schema_loader_accepts_plain_and_gzip_turtle(
     assert set(graph) == {
         (URIRef("https://example.org/vocab/Thing"), RDF.type, OWL.Class)
     }
+
+
+def test_bia_ontology_is_in_dl_consistent_and_coherent():
+    """Check the bundled ontology; checker regressions live in test_check_ontology."""
+    root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [sys.executable, str(root / "scripts/ontology/check_ontology.py")],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=150,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_external_declarations_match_source_vocabularies(related_ontologies):
+    """Check local OWL roles reference real classes/properties, without importing axioms."""
+    root = Path(__file__).resolve().parents[1]
+    declarations = Graph().parse(root / "test/ontology/external-declarations.ttl")
+    iao_url = "https://purl.obolibrary.org/obo/iao.owl"
+    with urlopen(iao_url, timeout=30) as response:
+        iao = Graph().parse(data=response.read(), format="xml", publicID=iao_url)
+    vocabulary = related_ontologies + iao
+    classes = {OWL.Class, RDFS.Class}
+    properties = {
+        RDF.Property,
+        OWL.ObjectProperty,
+        OWL.DatatypeProperty,
+        OWL.AnnotationProperty,
+    }
+    for term, predicate, kind in declarations:
+        expected = classes if kind == OWL.Class else properties
+        assert predicate == RDF.type and kind in classes | properties
+        assert set(vocabulary.objects(term, RDF.type)) & expected, term

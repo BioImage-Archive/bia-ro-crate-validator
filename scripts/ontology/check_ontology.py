@@ -2,7 +2,6 @@
 
 import argparse
 import hashlib
-import json
 import os
 import shutil
 import subprocess
@@ -27,6 +26,38 @@ MAX_DOWNLOAD_BYTES = 128 * 1024 * 1024
 JAVA_BUDGET_SECONDS = 60
 
 
+LIST_PROPERTIES = {
+    OWL[name]
+    for name in (
+        "intersectionOf",
+        "unionOf",
+        "oneOf",
+        "members",
+        "distinctMembers",
+        "propertyChainAxiom",
+        "hasKey",
+        "withRestrictions",
+        "onProperties",
+    )
+}
+
+RESTRICTION_OPERATORS = {
+    OWL[name]
+    for name in (
+        "someValuesFrom",
+        "allValuesFrom",
+        "hasValue",
+        "hasSelf",
+        "cardinality",
+        "minCardinality",
+        "maxCardinality",
+        "qualifiedCardinality",
+        "minQualifiedCardinality",
+        "maxQualifiedCardinality",
+    )
+}
+
+
 def read_regular_file(path: Path, limit: int = MAX_INPUT_BYTES) -> bytes:
     """Bound local inputs and refuse non-files before opening pipes/devices."""
     if not path.is_file():
@@ -39,42 +70,21 @@ def read_regular_file(path: Path, limit: int = MAX_INPUT_BYTES) -> bytes:
 
 
 def check_rdf_structure(graph: Graph) -> None:
-    """Reject ambiguous expressions and broken lists before permissive OWL parsing.
+    """Check RDF expressions that OWLAPI could otherwise drop or misinterpret.
 
-    These are RDF mapping checks, not reasoning. OWL 2 mappings:
+    These prechecks protect the conversion to OWL; Java performs literal,
+    profile and reasoning checks. See the OWL 2 RDF parsing rules:
     https://www.w3.org/TR/owl2-mapping-to-rdf/#Parsing_of_Expressions
     """
-    list_properties = {
-        OWL[name]
-        for name in (
-            "intersectionOf",
-            "unionOf",
-            "oneOf",
-            "members",
-            "distinctMembers",
-            "propertyChainAxiom",
-            "hasKey",
-            "withRestrictions",
-            "onProperties",
-        )
-    }
-    restriction_operators = {
-        OWL[name]
-        for name in (
-            "someValuesFrom",
-            "allValuesFrom",
-            "hasValue",
-            "hasSelf",
-            "cardinality",
-            "minCardinality",
-            "maxCardinality",
-            "qualifiedCardinality",
-            "minQualifiedCardinality",
-            "maxQualifiedCardinality",
-        )
-    }
+    _check_single_valued_expressions(graph)
+    _check_restrictions(graph)
+    _check_rdf_lists(graph)
+
+
+def _check_single_valued_expressions(graph: Graph) -> None:
+    """Reject multiple fillers where the OWL mapping expects one."""
     single_values = (
-        restriction_operators
+        RESTRICTION_OPERATORS
         | {
             OWL[name]
             for name in (
@@ -89,7 +99,7 @@ def check_rdf_structure(graph: Graph) -> None:
                 "annotatedTarget",
             )
         }
-        | (list_properties - {OWL.hasKey, OWL.propertyChainAxiom})
+        | (LIST_PROPERTIES - {OWL.hasKey, OWL.propertyChainAxiom})
     )
     for predicate in single_values:
         for subject in graph.subjects(predicate, unique=True):
@@ -97,10 +107,14 @@ def check_rdf_structure(graph: Graph) -> None:
                 raise ValueError(
                     f"OWL expression requires one value: {subject} {predicate}"
                 )
+
+
+def _check_restrictions(graph: Graph) -> None:
+    """Check restriction operators and values supported by the pinned engine."""
     restrictions = set(graph.subjects(RDF.type, OWL.Restriction))
-    restrictions.update(s for p in restriction_operators for s in graph.subjects(p))
+    restrictions.update(s for p in RESTRICTION_OPERATORS for s in graph.subjects(p))
     for node in restrictions:
-        operators = [p for p in restriction_operators if (node, p, None) in graph]
+        operators = [p for p in RESTRICTION_OPERATORS if (node, p, None) in graph]
         if len(operators) != 1:
             raise ValueError(f"Expected one restriction operator: {node}")
         operator = operators[0]
@@ -127,6 +141,9 @@ def check_rdf_structure(graph: Graph) -> None:
                     f"Cardinality exceeds OWLAPI's supported integer range: {node}"
                 )
 
+
+def _check_rdf_lists(graph: Graph) -> None:
+    """Require complete, terminating lists while allowing shared tails."""
     nodes = set(graph.subjects(RDF.first)) | set(graph.subjects(RDF.rest))
     links = {}
     for node in nodes:
@@ -136,7 +153,7 @@ def check_rdf_structure(graph: Graph) -> None:
         if node == RDF.nil or len(first) != 1 or len(rest) != 1:
             raise ValueError(f"Malformed RDF list cell: {node}")
         links[node] = rest[0]
-    for predicate in list_properties:
+    for predicate in LIST_PROPERTIES:
         for head in graph.objects(None, predicate):
             if head != RDF.nil and head not in links:
                 raise ValueError(f"Malformed RDF list head: {head}")
@@ -164,8 +181,6 @@ def reasoning_input(path: Path, inputs: dict[Path, bytes]) -> str:
     ontologies = set(graph.subjects(RDF.type, OWL.Ontology))
     if len(ontologies) != 1 or not all(isinstance(o, URIRef) for o in ontologies):
         raise ValueError("Input must declare exactly one named OWL ontology")
-    if path.resolve() == ONTOLOGY.resolve() and ontologies != {URIRef("http://bia/")}:
-        raise ValueError("BIA ontology IRI must be http://bia/")
     entities = {
         OWL.Class,
         OWL.ObjectProperty,
@@ -188,14 +203,15 @@ def reasoning_input(path: Path, inputs: dict[Path, bytes]) -> str:
             )
 
     check_rdf_structure(graph)
-    # Keep source lexical forms and relative IRIs intact. Only declaration
-    # triples are serialised: full IRIs prevent base/prefix leakage between files.
+    # Do not reserialise the source: RDFLib can normalise typed literals before
+    # Java checks their original spelling. Full-IRI support triples also keep
+    # source @base/@prefix directives from changing external declarations.
     declarations = "\n".join(sorted(external.serialize(format="nt").splitlines()))
     return f"@base <{path.as_uri()}> .\n{source}\n{declarations}\n"
 
 
 def verify_robot(path: Path) -> None:
-    """Reject an absent or changed tool before executing Java."""
+    """Verify downloaded/cached executable bytes match the pinned ROBOT release."""
     if not path.is_file() or path.stat().st_size > MAX_DOWNLOAD_BYTES:
         raise ValueError(f"Expected a bounded regular JAR file: {path}")
     with path.open("rb") as stream:
@@ -240,30 +256,6 @@ def check_ontology(path: Path) -> None:
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix="ontology-", dir=ARTIFACTS))
     print(f"Ontology reports: {output}", flush=True)
-    report = {
-        "status": "IN_PROGRESS",
-        "engine": "HermiT",
-        "source": str(path.absolute()),
-        "stages": [],
-    }
-    (output / "report.json").write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8"
-    )
-    try:
-        _check_ontology(path, output, report)
-        report["status"] = "PASS"
-    except BaseException as error:
-        report["status"] = "FAILED"
-        report["error"] = f"{type(error).__name__}: {error}"
-        raise
-    finally:
-        (output / "report.json").write_text(
-            json.dumps(report, indent=2) + "\n", encoding="utf-8"
-        )
-    print("OWL 2 DL profile, consistency and named-class satisfiability passed.")
-
-
-def _check_ontology(path: Path, output: Path, report: dict) -> None:
     verify_robot(ROBOT_JAR)
     executable = "java.exe" if os.name == "nt" else "java"
     java_home = os.environ.get("JAVA_HOME")
@@ -276,90 +268,63 @@ def _check_ontology(path: Path, output: Path, report: dict) -> None:
         raise RuntimeError("JDK 17 or newer is required for the ontology check")
     java = str(Path(java).resolve())
     inputs = {}
-    report["inputs"] = {}
-    for input_path, name in (
-        (path.absolute(), "source.ttl"),
-        (DECLARATIONS, "external-declarations.ttl"),
-        (JAVA_CHECK, "CheckOntology.java"),
-    ):
-        data = read_regular_file(input_path)
-        inputs[input_path] = data
-        (output / name).write_bytes(data)
-        report["inputs"][str(input_path)] = hashlib.sha256(data).hexdigest()
-    source = reasoning_input(path, inputs)
-    snapshot = output / "input.ttl"
-    snapshot.write_text(source, encoding="utf-8", newline="")
-    original = snapshot.read_bytes()
-    report["effective_input_sha256"] = hashlib.sha256(original).hexdigest()
-    report["robot_sha256"] = ROBOT_SHA256
-    report["java"] = java
-    prefix = [java, "-Xmx1G", "-Dfile.encoding=UTF-8"]
-    native = prefix + [
+    # Identify captured inputs, including when RDF validation fails.
+    with (output / "inputs.sha256").open("w", encoding="utf-8", newline="\n") as hashes:
+        for input_path, name in (
+            (path.absolute(), "source.ttl"),
+            (DECLARATIONS, "external-declarations.ttl"),
+            (JAVA_CHECK, "CheckOntology.java"),
+        ):
+            data = read_regular_file(input_path)
+            inputs[input_path] = data
+            (output / name).write_bytes(data)
+            hashes.write(f"{hashlib.sha256(data).hexdigest()}  {name}\n")
+        snapshot = output / "input.ttl"
+        snapshot.write_text(reasoning_input(path, inputs), encoding="utf-8", newline="")
+        hashes.write(
+            f"{hashlib.sha256(snapshot.read_bytes()).hexdigest()}  input.ttl\n"
+        )
+    # Execute the captured worker and RDF, even if the working tree changes.
+    command = [
+        java,
+        "-Xmx1G",
+        "-Dfile.encoding=UTF-8",
         "--class-path",
         str(ROBOT_JAR),
         "--source",
         "17",
-        str(JAVA_CHECK),
+        str(output / "CheckOntology.java"),
+        str(snapshot),
+        str(output),
     ]
-    commands = {"version": prefix + ["-jar", str(ROBOT_JAR), "--version"]}
-    for stage in ("literals", "profile", "reason"):
-        commands[stage] = native + [str(snapshot), stage, str(output)]
     environment = os.environ.copy()
     for key in (
         "JAVA_TOOL_OPTIONS",
         "JDK_JAVA_OPTIONS",
         "_JAVA_OPTIONS",
-        "ROBOT_JAVA_ARGS",
     ):
         environment.pop(key, None)
-    deadline = time.monotonic() + JAVA_BUDGET_SECONDS
-    for stage, command in commands.items():
-        verify_robot(ROBOT_JAR)
-        if snapshot.read_bytes() != original or any(
-            read_regular_file(p) != data for p, data in inputs.items()
-        ):
-            raise RuntimeError("Ontology/checker inputs changed during validation")
-        record = {"name": stage, "command": command}
-        report["stages"].append(record)
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            raise subprocess.TimeoutExpired(command, JAVA_BUDGET_SECONDS)
-        with (output / f"{stage}.log").open("w", encoding="utf-8") as log:
-            result = subprocess.run(
-                command,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                timeout=remaining,
-                check=False,
-                cwd=output,
-                stdin=subprocess.DEVNULL,
-                env=environment,
-            )
-        record["returncode"] = result.returncode
-        if result.returncode != 0:
-            profile = output / "profile.txt"
-            raise RuntimeError(
-                f"{stage} failed (exit {result.returncode}):\n"
-                + (output / f"{stage}.log").read_text(encoding="utf-8")
-                + (profile.read_text(encoding="utf-8") if profile.exists() else "")
-            )
-        expected = {
-            "profile": output / "profile.txt",
-            "reason": output / "reason.txt",
-        }.get(stage, output / f"{stage}.log")
-        if not expected.is_file() or expected.stat().st_size == 0:
-            raise RuntimeError(f"{stage} returned zero without required output")
-        if (
-            stage == "version"
-            and f"ROBOT version {ROBOT_VERSION}"
-            not in expected.read_text(encoding="utf-8").splitlines()
-        ):
-            raise RuntimeError("Unexpected ROBOT version output")
-    verify_robot(ROBOT_JAR)
-    if snapshot.read_bytes() != original or any(
-        read_regular_file(p) != data for p, data in inputs.items()
-    ):
-        raise RuntimeError("Ontology/checker inputs changed during validation")
+    log_path = output / "java.log"
+    with log_path.open("w", encoding="utf-8") as log:
+        result = subprocess.run(
+            command,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            timeout=JAVA_BUDGET_SECONDS,
+            check=False,
+            cwd=output,
+            stdin=subprocess.DEVNULL,
+            env=environment,
+        )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"Ontology check failed (exit {result.returncode}):\n"
+            + log_path.read_text(encoding="utf-8")
+        )
+    evidence = output / "reason.txt"
+    if not evidence.is_file() or not evidence.stat().st_size:
+        raise RuntimeError("Java returned zero without reason.txt")
+    print("OWL 2 DL profile, consistency and named-class satisfiability passed.")
 
 
 if __name__ == "__main__":

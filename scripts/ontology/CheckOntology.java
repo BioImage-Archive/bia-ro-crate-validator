@@ -26,26 +26,19 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.rio.RioParserImpl;
 import org.semanticweb.owlapi.rio.RioTurtleParserFactory;
 
-/** Check raw RDF literals, OWL parsing, DL profile and HermiT semantics. */
+/** Validate Turtle literals, OWL parsing/profile and HermiT reasoning in order. */
 final class CheckOntology {
     public static void main(String[] args) throws Exception {
         Path input = Path.of(args[0]);
-        String stage = args[1];
-        Path output = Path.of(args[2]);
-        if (stage.equals("literals")) {
-            RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
-            parser.getParserConfig().set(BasicParserSettings.VERIFY_DATATYPE_VALUES, true);
-            parser.getParserConfig().set(BasicParserSettings.VERIFY_LANGUAGE_TAGS, true);
-            parser.getParserConfig().set(BasicParserSettings.NORMALIZE_DATATYPE_VALUES, false);
-            try (InputStream stream = Files.newInputStream(input)) {
-                parser.parse(stream, input.toUri().toString());
-            }
-            System.out.println("Raw Turtle literal validation passed.");
-            return;
+        Path output = Path.of(args[1]);
+        RDFParser parser = Rio.createParser(RDFFormat.TURTLE);
+        parser.getParserConfig().set(BasicParserSettings.VERIFY_DATATYPE_VALUES, true);
+        parser.getParserConfig().set(BasicParserSettings.VERIFY_LANGUAGE_TAGS, true);
+        parser.getParserConfig().set(BasicParserSettings.NORMALIZE_DATATYPE_VALUES, false);
+        try (InputStream stream = Files.newInputStream(input)) {
+            parser.parse(stream, input.toUri().toString());
         }
-        if (!stage.equals("profile") && !stage.equals("reason")) {
-            throw new IllegalArgumentException("Unknown check: " + stage);
-        }
+        System.out.println("Raw Turtle literal validation passed.");
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         // A parse error must stop loading, not become a fresh error class.
         manager.setOntologyParsers(Set.of(new RioTurtleParserFactory() {
@@ -79,14 +72,9 @@ final class CheckOntology {
                 "Triples could not be parsed: " + rdf.getUnparsedTriples());
         }
         OWLProfileReport profile = new OWL2DLProfile().checkOntology(ontology);
-        if (stage.equals("profile")) {
-            Files.writeString(output.resolve("profile.txt"), profile.toString());
-        }
+        Files.writeString(output.resolve("profile.txt"), profile.toString());
         if (!profile.isInProfile()) {
             throw new IllegalArgumentException("OWL 2 DL profile violations: " + profile);
-        }
-        if (stage.equals("profile")) {
-            return;
         }
         OWLReasoner reasoner = new ReasonerFactory().createReasoner(ontology);
         try {

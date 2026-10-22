@@ -2,7 +2,8 @@
 @prefix schema: <http://schema.org/> .
 
 # Declarations for the external vocabulary used by BIA's axioms, not imports
-# of those vocabularies' semantics. Unknown external terms must fail the check.
+# of those vocabularies' semantics. test_ontology.py checks that these IRIs
+# exist as classes/properties in their source vocabularies.
 schema:Action a owl:Class .
 schema:CreativeWork a owl:Class .
 schema:FundingScheme a owl:Class .

@@ -43,21 +43,21 @@ poetry run bia-ro-crate validate <path to the directory root of the RO-Crate>
 
 ## Development tests
 
-Ontology tests require JDK 17 or newer and a checksum-pinned ROBOT release (including
-HermiT). Install it once, then run the tests:
+Install JDK 17 or newer separately (`PATH` or `JAVA_HOME`), then download the
+pinned ROBOT JAR containing OWLAPI and HermiT:
 
 ```sh
 poetry run python scripts/ontology/check_ontology.py --install
-poetry run pytest --basetemp=artifacts/pytest-tmp
+poetry run pytest
 ```
 
-To check only the ontology, run `poetry run python scripts/ontology/check_ontology.py`.
-This checks BIA's axioms with external vocabulary declarations, not the full
-external ontologies. Imports require an explicit local pinning policy. Reports
-are written under `artifacts/ontology-consistency/`, with input hashes and stage results.
-Reasoner errors also fail the check; the pinned HermiT cannot handle every
-OWL datatype value (for example, five-digit years). Cardinalities above
-2,147,483,647 exceed the pinned OWLAPI integer range and are rejected.
+Run `poetry run python scripts/ontology/check_ontology.py` for the ontology alone.
+Python prepares inputs; Java checks literals, the OWL 2 DL profile, consistency
+and named-class satisfiability. Only BIA's local axioms are reasoned over; external
+terms receive declarations checked against their source vocabularies by pytest.
+Imports are rejected. Per-run input copies, `inputs.sha256` and diagnostics are
+saved under `artifacts/ontology-consistency/`. This does not validate submission
+data or establish general OWL support.
 
 ## RO-Crate
 

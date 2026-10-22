@@ -138,11 +138,6 @@ bia:orcid a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     rdfs:domain schema:Person .
 
-# Literal identifiers identify named individuals through OWL keys. Inverse-
-# functional properties in OWL 2 DL can only connect individuals, not literals.
-schema:Organization owl:hasKey ( bia:rorid ) .
-schema:Person owl:hasKey ( bia:orcid ) .
-
 # Use schema:memberOf instead?
 # bia:affiliation a owl:ObjectProperty ;
 #     rdfs:label "affiliation"@en ;
