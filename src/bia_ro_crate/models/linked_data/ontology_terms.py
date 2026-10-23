@@ -12,11 +12,13 @@ class SCHEMA(DefinedNamespace):
     ScholarlyArticle: URIRef
 
     # Properties
+    abstract: URIRef
     address: URIRef
     additionalType: URIRef
     affiliation: URIRef
     author: URIRef
     contentUrl: URIRef
+    dateModified: URIRef
     datePublished: URIRef
     description: URIRef
     email: URIRef

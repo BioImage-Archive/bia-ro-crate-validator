@@ -127,7 +127,9 @@ def test_ro_crate_context_does_not_duplicate_term_labels():
     prefixless_context = SimpleJSONLDContext(terms=json_ld_context.terms.values())
     standard_context = prefixless_context.to_dict()
 
-    ro_crate_context = json.loads(requests.get("https://w3id.org/ro/crate/1.1/context").content).get("@context", {})
+    response = requests.get("https://w3id.org/ro/crate/1.1/context", timeout=30)
+    response.raise_for_status()
+    ro_crate_context = response.json()["@context"]
 
     inverse_map = DefaultDict(set)
     [inverse_map[str(term_map["@id"])].add(term_field_name) for term_field_name, term_map in standard_context.items()]
@@ -138,7 +140,11 @@ def test_ro_crate_context_does_not_duplicate_term_labels():
         term_id = str(term_map.get("@id"))
 
         if ro_crate_context_term:
-            check.assert_equal(term_id, ro_crate_context_term, msg=f"term_field_name remapped from {ro_crate_context_term} to {term_id}")
+            check.equal(
+                term_id,
+                ro_crate_context_term,
+                msg=f"{term_field_name} remapped from {ro_crate_context_term} to {term_id}",
+            )
 
         field_labels = inverse_map.get(term_id,[])
         check.equal(len(field_labels), 1, msg=f"{term_id} has more than 1 label: {field_labels}")

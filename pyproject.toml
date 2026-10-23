@@ -80,6 +80,8 @@ src_paths = ["src", "test"]
 known_first_party = ["bia_ro_crate"]
 
 [tool.pytest.ini_options]
+testpaths = ["test"]
+cache_dir = "artifacts/pytest-cache"
 filterwarnings = [
     "ignore::DeprecationWarning:rdflib",
 ]
