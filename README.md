@@ -41,6 +41,24 @@ Then run the CLI from the Poetry environment:
 poetry run bia-ro-crate validate <path to the directory root of the RO-Crate>
 ```
 
+## Development tests
+
+Install JDK 17 or newer separately (`PATH` or `JAVA_HOME`), then download the
+pinned ROBOT JAR containing OWLAPI and HermiT:
+
+```sh
+poetry run python scripts/ontology/check_ontology.py --install
+poetry run pytest
+```
+
+Run `poetry run python scripts/ontology/check_ontology.py` for the ontology alone.
+Python prepares inputs; Java checks literals, the OWL 2 DL profile, consistency
+and named-class satisfiability. Only BIA's local axioms are reasoned over; external
+terms receive declarations checked against their source vocabularies by pytest.
+Imports are rejected. Per-run input copies, `inputs.sha256` and diagnostics are
+saved under `artifacts/ontology-consistency/`. This does not validate submission
+data or establish general OWL support.
+
 ## RO-Crate
 
 RO-Crate is a community supported standard to packaging research objects (RO) with their metadata.

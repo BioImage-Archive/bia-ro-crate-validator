@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -35,8 +36,32 @@ jobs:
         - name: Install dependencies
           run: poetry install
 
+        - uses: actions/setup-java@v4
+          with:
+            distribution: temurin
+            java-version: "17"
+
+        - uses: actions/cache@v4
+          with:
+            path: artifacts/ontology-consistency/tools/robot.jar
+            key: robot-${{ hashFiles('scripts/ontology/check_ontology.py', 'scripts/ontology/CheckOntology.java') }}
+
+        - name: Install pinned ontology reasoner
+          run: poetry run python scripts/ontology/check_ontology.py --install
+
         - name: Run tests
+          env:
+            PYTEST_DEBUG_TEMPROOT: ${{ github.workspace }}/artifacts
           run: poetry run pytest
 
         - name: Build package
           run: poetry build
+
+        - name: Retain ontology diagnostics on failure
+          if: failure()
+          uses: actions/upload-artifact@v4
+          with:
+            name: ontology-${{ matrix.os }}-python-${{ matrix.python-version }}
+            path: artifacts/ontology-consistency/ontology-*/
+            if-no-files-found: ignore
+            retention-days: 7
