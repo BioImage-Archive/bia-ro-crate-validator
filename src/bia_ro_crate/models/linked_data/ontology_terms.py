@@ -17,6 +17,7 @@ class SCHEMA(DefinedNamespace):
     additionalType: URIRef
     affiliation: URIRef
     author: URIRef
+    contentUrl: URIRef
     dateModified: URIRef
     datePublished: URIRef
     description: URIRef
@@ -149,7 +150,6 @@ class BIA(DefinedNamespace):
     subject: URIRef
     transformationDescription: URIRef
     transformationMatrix: URIRef
-    uri: URIRef
     website: URIRef
     xIndex: URIRef
     yIndex: URIRef
