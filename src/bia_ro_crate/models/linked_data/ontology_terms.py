@@ -17,6 +17,7 @@ class SCHEMA(DefinedNamespace):
     additionalType: URIRef
     affiliation: URIRef
     author: URIRef
+    contentUrl: URIRef
     dateModified: URIRef
     datePublished: URIRef
     description: URIRef
@@ -85,12 +86,14 @@ class BIA(DefinedNamespace):
     Dataset: URIRef
     ExternalReference: URIRef
     FileList: URIRef
+    FileReference: URIRef
     FundingBody: URIRef
     Grant: URIRef
     Image: URIRef
     ImageAcquisitionProtocol: URIRef
     ImageAnalysisMethod: URIRef
     ImageCorrelationMethod: URIRef
+    ImageRepresentation: URIRef
     Protocol: URIRef
     Publication: URIRef
     SignalChannel: URIRef
@@ -121,6 +124,11 @@ class BIA(DefinedNamespace):
     biologicalEntityDescription: URIRef
     channelBiologicalEntity: URIRef
     channelContentDescription: URIRef
+    digitalSizeC: URIRef
+    digitalSizeT: URIRef
+    digitalSizeX: URIRef
+    digitalSizeY: URIRef
+    digitalSizeZ: URIRef
     doi: URIRef
     experimentalVariableDescription: URIRef
     extrinsicVariableDescription: URIRef
@@ -131,14 +139,20 @@ class BIA(DefinedNamespace):
     fundingStatement: URIRef
     growthProtocol: URIRef
     imageAcquisitionProtocol: URIRef
+    imageFormat: URIRef
     imagingInstrumentDescription: URIRef
     imagingMethodName: URIRef
     imagingPreparationProtocol: URIRef
     inputImage: URIRef
     intrinsicVariableDescription: URIRef
+    physicalSizeT: URIRef
+    physicalSizeX: URIRef
+    physicalSizeY: URIRef
+    physicalSizeZ: URIRef
     protocol: URIRef
     pubmedId: URIRef
     relatedPublication: URIRef
+    representation: URIRef
     resultOf: URIRef
     role: URIRef
     sampleOf: URIRef
@@ -147,9 +161,12 @@ class BIA(DefinedNamespace):
     sizeInBytes: URIRef
     spatialInformation: URIRef
     subject: URIRef
+    timestepDuration: URIRef
     transformationDescription: URIRef
     transformationMatrix: URIRef
-    uri: URIRef
+    voxelSizeX: URIRef
+    voxelSizeY: URIRef
+    voxelSizeZ: URIRef
     website: URIRef
     xIndex: URIRef
     yIndex: URIRef

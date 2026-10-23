@@ -31,9 +31,9 @@ bia:Publication a owl:Class ;
 # We recommend using the following properties from other ontologies:
 # - schema:author to capture creator and contributors to studies (whether individual People or Organisations).
 # - schema:funding to capture grants that funded a particular study.
-# - schema:releaseDate to capture when a study or publication is made publicly avaliable
+# - schema:releaseDate to capture when a study or publication is made publicly available
 # - schema:keywords to capture keywords or tags used to describe the subject or context of the study.
-# - schena:license to capture the licence associated with any data attached to the study.
+# - schema:license to capture the licence associated with any data attached to the study.
 # - schema:hasPart to capture bia:Datasets that are part of the study
 
 bia:accessionId a owl:DatatypeProperty;
@@ -86,21 +86,12 @@ bia:acknowledgement a owl:DatatypeProperty;
     rdfs:domain bia:Study ;
     rdfs:range rdf:langString .
 
-bia:seeAlso a owl:ObjectProperty ;
-    rdfs:label "see also"@en ;
-    rdfs:comment "A link to an external resource alongside a description of the connection between the subject item and the link."@en ;
-    rdfs:range bia:ExternalReference .
-
 bia:relatedPublication a owl:ObjectProperty ;
     rdfs:label "related publication"@en ;
     rdfs:comment """A publication that is of some relevance to the subject."""@en ;
     rdfs:subPropertyOf schema:citation ;
     rdfs:range bia:Publication .
 
-bia:exemplarImage a owl:ObjectProperty;
-    rdfs:label "exemplar image"@en ;
-    rdfs:comment "An image that typical of the study or dataset that can be used to represent "@en ;
-    rdfs:range bia:Image .
 
 ## Authors and Affiliations
 
@@ -109,7 +100,7 @@ bia:exemplarImage a owl:ObjectProperty;
 bia:Affiliation a owl:Class ;
     rdfs:label "affiliation"@en ;
     rdfs:subClassOf schema:Organization ;
-    rdfs:comment "An organsiation that a contributor is affiliated with."@en .
+    rdfs:comment "An organization that a contributor is affiliated with."@en .
 
 bia:Contributor a owl:Class ;
     rdfs:label "contributor"@en ;
@@ -118,35 +109,14 @@ bia:Contributor a owl:Class ;
 # We also recommend using the following classes from other ontologies:
 # - schema:Person for instances of bia:Contributor that are People
 # - schema:Organization for instance of bia:Contributor that are Organisations
+# And we recommend using the ORCID or RORID as the ID of the instance.
 
 # Properties
 
 # We recommend using the following properties from other ontologies:
 # - schema:address to capture address of contributors and affiliations
-# - schema:email to capture contact emaol of contributors and affiliations
+# - schema:email to capture contact email of contributors and affiliations
 # - schema:memberOf to capture affiliations of both Persons and Organizations (Contributors can be either)  
-
-bia:rorid a owl:DatatypeProperty ;
-    rdfs:label "Research Organisation Registry ID"@en ;
-    rdfs:comment "An identifier for an organisation in the Research Organisation Registry."@en ;
-    rdfs:range xsd:string ;
-    rdfs:domain schema:Organization .
-
-bia:orcid a owl:DatatypeProperty ;
-    rdfs:label "ORCID iD"@en ;
-    rdfs:comment "An identifier for a researcher in the ORCID registry."@en ;
-    rdfs:range xsd:string ;
-    rdfs:domain schema:Person .
-
-# Use schema:memberOf instead?
-# bia:affiliation a owl:ObjectProperty ;
-#     rdfs:label "affiliation"@en ;
-#     rdfs:comment 
-#         """An Affiliation an Contributor is associated with. 
-#         Note this is not quite the same as schema:affiliation, as contributor includes groups.
-#         Both schema:affiliaiton and schema:subOrganization are probably rdfs:subPropertyOf bia:affiliation."""@en ;
-#     rdfs:domain bia:Study ;
-#     rdfs:range rdfs: .
 
 bia:website a owl:DatatypeProperty ;
     rdfs:label "website"@en ;
@@ -187,9 +157,7 @@ bia:ExternalReference a owl:Class ;
     rdfs:label "external reference"@en ;
     rdfs:comment 
         """A reference to some link outside of this database.
-        This is essentially a form of reification of a connection between an object in a database, and some URL, in order to capture additional information about the nature of the link. 
-        It is therefore only intended to be used with the properties: bia:seeAlso, bia:link, and bia:linkDesecription."""@en ;
-    rdfs:seeAlso bia:seeAlso , bia:link, bia:linkDescription .
+        This is essentially a form of reification of a connection between an object in a database, and some URL, in order to capture additional information about the nature of the link."""@en .
 
 
 # Properties
@@ -219,7 +187,7 @@ bia:associatedAnalysisMethod a owl:ObjectProperty;
 
 bia:associatedCorrelationMethod a owl:ObjectProperty;
     rdfs:label "associated correlation method"@en ;
-    rdfs:comment "A method that was applied to (at least some of) the data to corralate data between two or more images."@en ;
+    rdfs:comment "A method that was applied to (at least some of) the data to correlate data between two or more images."@en ;
     rdfs:domain obo:IAO_0000030 ;
     rdfs:range bia:ImageCorrelationMethod .
 
@@ -284,32 +252,22 @@ bia:associatedCreationProcess a owl:ObjectProperty ;
 bia:Image a owl:Class ;
     rdfs:subClassOf schema:CreativeWork ,  obo:IAO_0000030 ;
     rdfs:label "image"@en ;
-    rdfs:comment "The abstract notion of an image that can have many representions in different image formats. A BIA image has been created from a unique set of File References."@en .
+    rdfs:comment "The abstract notion of an image that can have many representations in different image formats. A BIA image has been created from a unique set of File References."@en .
 
 bia:ImageRepresentation a owl:Class ;
     rdfs:label "image representation"@en ;
-    rdfs:comment "The viewable or processable represention of an image in a particular image file format. Images representations of the same image hold equivalent data."@en .
-
-
-# TODO: Review image viewer settings, rendered view etc.
-# bia:RenderedView a owl:Class ;
-#     rdfs:label "rendered view"@en ;
-#     rdfs:comment "A particular view of an image, such as as a specific timestamp of a time series, or a view direction of a 3D model."@en .
-
-# bia:Channel a owl:Class ;
-#     rdfs:label "channel"@en ;
-#     rdfs:comment "An image channel."@en .
+    rdfs:comment "The viewable or processable representation of an image in a particular image file format. Image representations of the same image hold equivalent data."@en .
 
 
 # Properties
 
-bia:representation a owl:ObjectProperty ; # Could be owl:inverseFunctionalProperty, but maybe that's too restrictive for now?
+bia:representation a owl:ObjectProperty ;
     rdfs:label "representation"@en ;
     rdfs:comment "The realisation of a bia:Image in a particular image format. Different bia:ImageRepresentation of the same image should hold equivalent data."@en ;
     rdfs:domain bia:Image ;
     rdfs:range bia:ImageRepresentation  .
 
-bia:resultOf a owl:ObjectProperty ; # Could be owl:functionalProperty, but maybe that's too restrictive for now?
+bia:resultOf a owl:ObjectProperty ;
     rdfs:label "created through"@en ;
     rdfs:comment "The creation process that resulted in the creation of this image."@en ;
     owl:inverseOf schema:result ; 
@@ -322,11 +280,6 @@ bia:imageFormat  a owl:DatatypeProperty ;
     rdfs:domain bia:ImageRepresentation ;
     rdfs:range xsd:string .
 
-bia:totalSizeInBytes a owl:DatatypeProperty ;
-    rdfs:label "total size in bytes"@en ;
-    rdfs:comment "combined disc size in bytes of all the files."@en ;
-    rdfs:domain bia:ImageRepresentation ;
-    rdfs:range xsd:string .
 
 # Note: review rdfs:range type - is xsd:decimal the right choice?
 bia:physicalSizeX a owl:DatatypeProperty ;
@@ -476,6 +429,7 @@ bia:Taxon a owl:Class ;
     rdfs:label "taxon"@en ;
     rdfs:comment "The classification of a biological entity."@en .
 
+# We recommend using the NCBI taxon ID as the identifier of the taxon.
 
 # Properties
 
@@ -503,12 +457,6 @@ bia:intrinsicVariableDescription a owl:DatatypeProperty ;
     rdfs:range rdf:langString ;
     rdfs:domain bia:BioSample .
 
-bia:ncbiId a owl:DatatypeProperty ;
-    rdfs:label "ncbi id"@en ;
-    rdfs:comment "ID in the NCBI taxon registry, formatted: NCBI:txid<ID number>."@en ;
-    rdfs:subPropertyOf dc:identifier ;
-    rdfs:range xsd:string ;
-    rdfs:domain bia:Taxon .
 
 bia:growthProtocol a owl:ObjectProperty ;
     rdfs:label "growth protocl"@en ;
@@ -517,13 +465,13 @@ bia:growthProtocol a owl:ObjectProperty ;
     rdfs:domain bia:BioSample .
 
 
-## Protocols, Signal-Channel information for specimen prepration
+## Protocols, Signal-Channel information for specimen preparation
 
 # Classes
 
 bia:Protocol a owl:Class ;
     rdfs:label "protocol"@en ;
-    rdfs:comment "The description of a sequence of actions that were perfomed."@en .
+    rdfs:comment "The description of a sequence of actions that were performed."@en .
 
 bia:AnnotationMethod a owl:Class ;
     rdfs:subClassOf bia:Protocol ;
@@ -556,12 +504,6 @@ bia:ImageCorrelationMethod a owl:Class ;
 
 # Properties
 
-bia:description a owl:DatatypeProperty ;
-    rdfs:label "protocol description"@en ;
-    rdfs:comment "A text description of the set of actions to perform when following a protocol."@en ;
-    rdfs:range rdf:langString ;
-    rdfs:domain bia:Protocol .
-
 bia:imagingInstrumentDescription a owl:DatatypeProperty ;
     rdfs:label "imaging instrument description"@en ;
     rdfs:comment "Names, types, or description of how the instruments used to create the image."@en ;
@@ -582,7 +524,7 @@ bia:imagingMethodName a owl:DatatypeProperty ;
     rdfs:domain bia:ImageAcquisitionProtocol .
 
 bia:signalChannelInformation a owl:ObjectProperty ;
-    rdfs:label "singal channel information"@en ;
+    rdfs:label "signal channel information"@en ;
     rdfs:comment "How a signal from the sample was generated in order to be captured in a channel of the image"@en ;
     rdfs:range bia:SignalChannel ;
     rdfs:domain bia:SpecimenImagingPreparationProtocol .
@@ -631,7 +573,7 @@ bia:featuresAnalysed a owl:DatatypeProperty ;
 
 bia:fiducialsUsed a owl:DatatypeProperty ;
     rdfs:label "fiducials used"@en ;
-    rdfs:comment "Features from correlated datasets used for colocalization."@en ;
+    rdfs:comment "Features from correlated datasets used for co-localization."@en ;
     rdfs:range rdf:langString ;
     rdfs:domain bia:AnnotationMethod .
 
@@ -691,28 +633,11 @@ bia:filePath a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     rdfs:domain bia:FileReference .
 
-# Note: does this need to be different to what is used on Image Represenations (totalSizeInBytes)?
 bia:sizeInBytes a owl:DatatypeProperty ;
     rdfs:label "size in bytes"@en ;
     rdfs:subPropertyOf schema:contentSize ;
     rdfs:comment "Disc size in bytes."@en ;
-    rdfs:range xsd:integer ;
-    rdfs:domain bia:FileReference .
-
-# Note: does this need to be different to what is used on Image Represenations (fileURI)?
-bia:uri a owl:DatatypeProperty ;
-    rdfs:label "file path"@en ;
-    rdfs:comment "URI from which the file can be accessed."@en ;
-    rdfs:range xsd:string ;
-    rdfs:domain bia:FileReference .
-
-bia:sourceImagePath a owl:AnnotationProperty ;
-    rdfs:label "source image path"@en ;
-    rdfs:comment "In a file list, this is the set of file paths of the Image that was used as an input of it's creation (e.g. for a segmentation mask, the value of bia:sourceImagePath would be the original images pre-segmentation). This property should be used over bia:sourceImageName if the paths are unique to each Image, which is usually the case."@en .
-
-bia:sourceImageName a owl:AnnotationProperty ;
-    rdfs:label "source image path"@en ;
-    rdfs:comment "In a file list, this is the set of image names of that were used as an input to creating another Image. This property should be used over bia:sourceImagePath if there are images are composed of more than one file. In this case the image names should be unique."@en .
+    rdfs:range xsd:integer .
 
 bia:xIndex a owl:DatatypeProperty ;
     rdfs:label "x index"@en ;
