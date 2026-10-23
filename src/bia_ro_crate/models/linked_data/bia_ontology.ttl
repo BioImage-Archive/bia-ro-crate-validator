@@ -157,8 +157,7 @@ bia:ExternalReference a owl:Class ;
     rdfs:label "external reference"@en ;
     rdfs:comment 
         """A reference to some link outside of this database.
-        This is essentially a form of reification of a connection between an object in a database, and some URL, in order to capture additional information about the nature of the link."""@en ;
-    rdfs:seeAlso bia:seeAlso .
+        This is essentially a form of reification of a connection between an object in a database, and some URL, in order to capture additional information about the nature of the link."""@en .
 
 
 # Properties
