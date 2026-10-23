@@ -1,8 +1,13 @@
 import gzip
+from inspect import get_annotations
 from io import BytesIO
 
 import pytest
 import pytest_check as check
+from rdflib import Namespace, URIRef
+from rdflib.graph import Graph
+from rdflib.namespace import OWL, RDF, RDFS, XSD
+
 from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
@@ -11,9 +16,6 @@ from bia_ro_crate.models.linked_data.ontology_terms import (
     DUBLINCORE,
     SCHEMA,
 )
-from rdflib import Namespace, URIRef
-from rdflib.graph import Graph
-from rdflib.namespace import OWL, RDF, RDFS, XSD
 
 # TODO: Add a full owl consistency check using an owl reasoner,
 # Note our metaclasses have issues with the python version of owlready2, (to do with python class inheritance, rather than ontology)
@@ -121,13 +123,22 @@ def test_bia_terms_have_label_and_comment(bia_ontology: Graph):
 
 
 def test_bia_namespace_terms(bia_ontology: Graph):
-    bia_terms = list(
-        term for term in bia_ontology.subjects(unique=True) if isinstance(term, URIRef)
-    )
+    prefix = "http://bia/"
+    ontology_terms = {
+        term
+        for term in bia_ontology.subjects(unique=True)
+        if isinstance(term, URIRef)
+        and str(term).startswith(prefix)
+        and str(term) != prefix
+    }
+    declared_terms = {
+        BIA[name]
+        for name, annotation in get_annotations(BIA).items()
+        if annotation is URIRef and not name.startswith("_")
+    }
 
-    for attribute in dir(BIA):
-        if not attribute.startswith("_") and isinstance(attribute, URIRef):
-            check.is_in(attribute, bia_terms, msg=f"{attribute} not in BIA ontology")
+    assert ontology_terms, "The bundled ontology contains no local BIA terms"
+    assert declared_terms == ontology_terms
 
 
 @pytest.mark.parametrize(
