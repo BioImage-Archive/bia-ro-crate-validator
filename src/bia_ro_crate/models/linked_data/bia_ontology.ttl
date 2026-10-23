@@ -100,7 +100,7 @@ bia:relatedPublication a owl:ObjectProperty ;
 bia:Affiliation a owl:Class ;
     rdfs:label "affiliation"@en ;
     rdfs:subClassOf schema:Organization ;
-    rdfs:comment "An organsiation that a contributor is affiliated with."@en .
+    rdfs:comment "An organization that a contributor is affiliated with."@en .
 
 bia:Contributor a owl:Class ;
     rdfs:label "contributor"@en ;
@@ -256,7 +256,7 @@ bia:Image a owl:Class ;
 
 bia:ImageRepresentation a owl:Class ;
     rdfs:label "image representation"@en ;
-    rdfs:comment "The viewable or processable representation of an image in a particular image file format. Images representations of the same image hold equivalent data."@en .
+    rdfs:comment "The viewable or processable representation of an image in a particular image file format. Image representations of the same image hold equivalent data."@en .
 
 
 # Properties
