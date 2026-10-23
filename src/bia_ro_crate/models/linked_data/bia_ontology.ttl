@@ -429,6 +429,7 @@ bia:Taxon a owl:Class ;
     rdfs:label "taxon"@en ;
     rdfs:comment "The classification of a biological entity."@en .
 
+# We recommend using the NCBI taxon ID as the identifier of the taxon.
 
 # Properties
 
