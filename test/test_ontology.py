@@ -4,6 +4,10 @@ from io import BytesIO
 
 import pytest
 import pytest_check as check
+from rdflib import Namespace, URIRef
+from rdflib.graph import Graph
+from rdflib.namespace import OWL, RDF, RDFS, XSD
+
 from bia_ro_crate.models.linked_data.ontology_terms import (
     BIA,
     CSVW,
@@ -12,9 +16,6 @@ from bia_ro_crate.models.linked_data.ontology_terms import (
     DUBLINCORE,
     SCHEMA,
 )
-from rdflib import Namespace, URIRef
-from rdflib.graph import Graph
-from rdflib.namespace import OWL, RDF, RDFS, XSD
 
 # TODO: Add a full owl consistency check using an owl reasoner,
 # Note our metaclasses have issues with the python version of owlready2, (to do with python class inheritance, rather than ontology)

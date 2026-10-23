@@ -17,6 +17,7 @@ class SCHEMA(DefinedNamespace):
     additionalType: URIRef
     affiliation: URIRef
     author: URIRef
+    contentUrl: URIRef
     dateModified: URIRef
     datePublished: URIRef
     description: URIRef
@@ -123,14 +124,12 @@ class BIA(DefinedNamespace):
     biologicalEntityDescription: URIRef
     channelBiologicalEntity: URIRef
     channelContentDescription: URIRef
-    description: URIRef
     digitalSizeC: URIRef
     digitalSizeT: URIRef
     digitalSizeX: URIRef
     digitalSizeY: URIRef
     digitalSizeZ: URIRef
     doi: URIRef
-    exemplarImage: URIRef
     experimentalVariableDescription: URIRef
     extrinsicVariableDescription: URIRef
     fbbiId: URIRef
@@ -146,8 +145,6 @@ class BIA(DefinedNamespace):
     imagingPreparationProtocol: URIRef
     inputImage: URIRef
     intrinsicVariableDescription: URIRef
-    ncbiId: URIRef
-    orcid: URIRef
     physicalSizeT: URIRef
     physicalSizeX: URIRef
     physicalSizeY: URIRef
@@ -158,21 +155,15 @@ class BIA(DefinedNamespace):
     representation: URIRef
     resultOf: URIRef
     role: URIRef
-    rorid: URIRef
     sampleOf: URIRef
-    seeAlso: URIRef
     signalChannelInformation: URIRef
     signalContrastMechanismDescription: URIRef
     sizeInBytes: URIRef
-    sourceImageName: URIRef
-    sourceImagePath: URIRef
     spatialInformation: URIRef
     subject: URIRef
     timestepDuration: URIRef
-    totalSizeInBytes: URIRef
     transformationDescription: URIRef
     transformationMatrix: URIRef
-    uri: URIRef
     voxelSizeX: URIRef
     voxelSizeY: URIRef
     voxelSizeZ: URIRef
