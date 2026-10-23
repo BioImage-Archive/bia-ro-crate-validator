@@ -46,8 +46,6 @@ class OntologyConsistencyReport:
     """Scoped diagnostics, including gaps that a boolean result cannot convey."""
 
     issues: tuple[OntologyIssue, ...]
-    checked_states: int
-    mapped_fields_seen: int
 
     @property
     def errors(self) -> tuple[OntologyIssue, ...]:
@@ -196,7 +194,6 @@ class _Inspector:
         self.graph = graph
         self.reference = reference
         self.issues = []
-        self.mapped_fields_seen = 0
         self.queue = deque()
         self.visited = set()
 
@@ -500,7 +497,6 @@ class _Inspector:
                 continue
             if metadata:
                 mapped_here += 1
-                self.mapped_fields_seen += 1
                 info = self.property_info(metadata[0], f"{path}.{name}")
                 if info:
                     contexts[name] = metadata[0], info
@@ -666,9 +662,7 @@ class _Inspector:
                 key=lambda item: (item.path, item.severity, item.code, item.message),
             )
         )
-        return OntologyConsistencyReport(
-            issues, len(self.visited), self.mapped_fields_seen
-        )
+        return OntologyConsistencyReport(issues)
 
 
 def inspect_model(

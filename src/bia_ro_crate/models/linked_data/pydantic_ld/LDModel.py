@@ -30,7 +30,6 @@ class LDModel(BaseModel):
         document-level settings belong to SimpleJSONLDContext.
         """
         field_contexts = []
-        names = set()
         serialised_names = Counter(
             (
                 info.serialization_alias
@@ -53,14 +52,8 @@ class LDModel(BaseModel):
                 name = field_name
                 if by_alias and field_info.serialization_alias is not None:
                     name = field_info.serialization_alias
-                if (
-                    not name
-                    or name.startswith("@")
-                    or name in names
-                    or serialised_names[name] > 1
-                ):
+                if not name or name.startswith("@") or serialised_names[name] > 1:
                     raise ValueError(f"{cls.__name__}: conflicting context term {name}")
-                names.add(name)
                 term = field_context.to_context_term(name, compacted_ids=compacted_ids)
 
                 field_contexts.append(term)

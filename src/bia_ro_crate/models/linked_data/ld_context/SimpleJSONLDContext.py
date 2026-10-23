@@ -44,8 +44,7 @@ class SimpleJSONLDContext:
             context_dict |= term.to_mapping_dict(self.prefixes)
 
         # merge any special mappings (e.g. @type container entries or renamed @id)
-        if getattr(self, "_special_mappings", None):
-            context_dict |= deepcopy(self._special_mappings)
+        context_dict |= deepcopy(self._special_mappings)
 
         return dict(sorted(context_dict.items()))
 

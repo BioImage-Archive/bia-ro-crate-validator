@@ -319,6 +319,7 @@ def test_context_merge_preserves_keyword_settings_and_rejects_conflicts():
     ]
     exported = merged.to_dict()
     exported["@type"]["@container"] = "@list"
+    assert merged.to_dict()["@type"]["@container"] == "@set"
     assert first.to_dict()["@type"]["@container"] == "@set"
     conflict = SimpleJSONLDContext(terms=[ContextTerm("urn:other", "link")])
     with pytest.raises(ValueError, match="Context definition conflict"):

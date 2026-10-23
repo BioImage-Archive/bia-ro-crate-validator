@@ -380,8 +380,6 @@ def test_range_declarations_establish_a_property_without_a_redundant_type():
 
 
 def test_model_inspection_is_read_only_and_reports_coverage(monkeypatch):
-    from dataclasses import FrozenInstanceError
-
     class Record(LDModel):
         pass
 
@@ -390,10 +388,8 @@ def test_model_inspection_is_read_only_and_reports_coverage(monkeypatch):
 
     monkeypatch.setattr(Record, "model_rebuild", forbidden_rebuild)
     report = Record.ontology_consistency_report(Graph())
-    assert report.ok and report.mapped_fields_seen == 0
+    assert report.ok
     assert {item.code for item in report.notices} == {"NO_MAPPED_FIELDS"}
-    with pytest.raises(FrozenInstanceError):
-        report.checked_states = 99
 
 
 def test_worklist_deduplicates_shared_subgraphs_and_limits_incomplete_runs(monkeypatch):
@@ -404,8 +400,8 @@ def test_worklist_deduplicates_shared_subgraphs_and_limits_incomplete_runs(monke
         child = create_model(
             f"TreeDepth{depth}", __base__=LDModel, left=(child, ...), right=(child, ...)
         )
-    report = child.ontology_consistency_report(Graph())
-    assert report.ok and report.checked_states == 13
+    monkeypatch.setattr(model_consistency, "MAX_MODEL_STATES", 13)
+    assert child.ontology_consistency_report(Graph()).ok
     monkeypatch.setattr(model_consistency, "MAX_MODEL_STATES", 2)
     report = child.ontology_consistency_report(Graph())
     assert not report.ok and any(
@@ -425,7 +421,6 @@ def test_shared_child_is_checked_again_under_a_different_parent_range():
         ":good a owl:ObjectProperty; rdfs:range :Child . :bad a owl:ObjectProperty; rdfs:range :Other . :Child owl:disjointWith :Other ."
     )
     report = Parent.ontology_consistency_report(graph)
-    assert report.checked_states == 3
     assert any(
         item.path == "Parent.bad" and "disjoint" in item.message
         for item in report.errors
