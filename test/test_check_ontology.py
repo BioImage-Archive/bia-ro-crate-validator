@@ -39,10 +39,12 @@ def run_check(*arguments):
 
 
 def prepare_input(checker, path):
-    inputs = {
-        p: checker.read_regular_file(p) for p in (path.absolute(), checker.DECLARATIONS)
-    }
-    return checker.reasoning_input(path, inputs)
+    return checker.combine_ontology_and_declarations(
+        checker.CapturedTurtle(path, checker.read_regular_file(path)),
+        checker.CapturedTurtle(
+            checker.DECLARATIONS, checker.read_regular_file(checker.DECLARATIONS)
+        ),
+    )
 
 
 @pytest.mark.parametrize(
@@ -309,7 +311,33 @@ def test_incomplete_java_run_cannot_pass(
 
     monkeypatch.setattr(checker.subprocess, "run", incomplete)
     error = subprocess.TimeoutExpired if times_out else RuntimeError
-    with pytest.raises(error, match=None if times_out else "without reason.txt"):
+    with pytest.raises(
+        error, match=None if times_out else "without a non-empty profile.txt"
+    ):
+        checker.check_ontology(ontology)
+    assert "named-class satisfiability passed" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("missing_report", ["profile.txt", "reason.txt"])
+@pytest.mark.parametrize("empty", [False, True], ids=["missing", "empty"])
+def test_successful_java_exit_requires_both_reports(
+    checker, monkeypatch, tmp_path, capsys, missing_report, empty
+):
+    ontology = tmp_path / "ontology.ttl"
+    ontology.write_text(PREFIXES, encoding="utf-8")
+    monkeypatch.setattr(checker, "ARTIFACTS", tmp_path / "reports")
+
+    def incomplete(command, **kwargs):
+        output = Path(command[-1])
+        for name in ("profile.txt", "reason.txt"):
+            if name != missing_report:
+                (output / name).write_text("Passed", encoding="utf-8")
+            elif empty:
+                (output / name).touch()
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(checker.subprocess, "run", incomplete)
+    with pytest.raises(RuntimeError, match=missing_report):
         checker.check_ontology(ontology)
     assert "named-class satisfiability passed" not in capsys.readouterr().out
 

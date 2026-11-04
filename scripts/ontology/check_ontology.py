@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 
 from rdflib import Graph, Literal, URIRef
@@ -168,14 +169,30 @@ def _check_rdf_lists(graph: Graph) -> None:
         complete.update(path)
 
 
-def reasoning_input(path: Path, inputs: dict[Path, bytes]) -> str:
-    """Validate captured RDF without changing source literal forms or IRI bases."""
-    path = path.absolute()
-    source = inputs[path].decode("utf-8-sig")
-    declarations = inputs[DECLARATIONS].decode("utf-8-sig")
+@dataclass(frozen=True)
+class CapturedTurtle:
+    """Captured Turtle bytes and the original path used to resolve relative IRIs."""
+
+    path: Path
+    data: bytes
+
+
+def combine_ontology_and_declarations(
+    ontology: CapturedTurtle, external_declarations: CapturedTurtle
+) -> str:
+    """Validate and combine captured ontology/declarations for input.ttl.
+
+    Only these two RDF inputs are combined; the Java worker is captured separately.
+    Preserve original literal spellings and resolve IRIs against the source paths.
+    """
+    path = ontology.path.absolute()
+    source = ontology.data.decode("utf-8-sig")
+    declarations = external_declarations.data.decode("utf-8-sig")
     graph = Graph().parse(data=source, publicID=path.as_uri(), format="turtle")
     external = Graph().parse(
-        data=declarations, publicID=DECLARATIONS.absolute().as_uri(), format="turtle"
+        data=declarations,
+        publicID=external_declarations.path.absolute().as_uri(),
+        format="turtle",
     )
 
     ontologies = set(graph.subjects(RDF.type, OWL.Ontology))
@@ -254,7 +271,8 @@ def check_ontology(path: Path) -> None:
     included; new imports require an explicit, pinned local import policy.
     """
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
-    output = Path(tempfile.mkdtemp(prefix="ontology-", dir=ARTIFACTS))
+    prefix = "ontology-bundled-" if path.resolve() == ONTOLOGY else "ontology-custom-"
+    output = Path(tempfile.mkdtemp(prefix=prefix, dir=ARTIFACTS))
     print(f"Ontology reports: {output}", flush=True)
     verify_robot(ROBOT_JAR)
     executable = "java.exe" if os.name == "nt" else "java"
@@ -280,7 +298,14 @@ def check_ontology(path: Path) -> None:
             (output / name).write_bytes(data)
             hashes.write(f"{hashlib.sha256(data).hexdigest()}  {name}\n")
         snapshot = output / "input.ttl"
-        snapshot.write_text(reasoning_input(path, inputs), encoding="utf-8", newline="")
+        snapshot.write_text(
+            combine_ontology_and_declarations(
+                CapturedTurtle(path.absolute(), inputs[path.absolute()]),
+                CapturedTurtle(DECLARATIONS, inputs[DECLARATIONS]),
+            ),
+            encoding="utf-8",
+            newline="",
+        )
         hashes.write(
             f"{hashlib.sha256(snapshot.read_bytes()).hexdigest()}  input.ttl\n"
         )
@@ -321,10 +346,16 @@ def check_ontology(path: Path) -> None:
             f"Ontology check failed (exit {result.returncode}):\n"
             + log_path.read_text(encoding="utf-8")
         )
-    evidence = output / "reason.txt"
-    if not evidence.is_file() or not evidence.stat().st_size:
-        raise RuntimeError("Java returned zero without reason.txt")
+    check_java_wrote_reports(output)
     print("OWL 2 DL profile, consistency and named-class satisfiability passed.")
+
+
+def check_java_wrote_reports(output: Path) -> None:
+    """Require both non-empty reports before accepting a successful Java exit."""
+    for name in ("profile.txt", "reason.txt"):
+        report = output / name
+        if not report.is_file() or not report.stat().st_size:
+            raise RuntimeError(f"Java returned zero without a non-empty {name}")
 
 
 if __name__ == "__main__":

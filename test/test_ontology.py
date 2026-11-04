@@ -194,7 +194,11 @@ def test_schema_loader_accepts_plain_and_gzip_turtle(
 
 
 def test_bia_ontology_is_in_dl_consistent_and_coherent():
-    """Check the bundled ontology; checker regressions live in test_check_ontology."""
+    """Check bia_ontology.ttl combined with test/ontology/external-declarations.ttl.
+
+    External terms need declarations there to pass the OWL 2 DL profile check.
+    Checker regressions live in test_check_ontology.py.
+    """
     root = Path(__file__).resolve().parents[1]
     result = subprocess.run(
         [sys.executable, str(root / "scripts/ontology/check_ontology.py")],

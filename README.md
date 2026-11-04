@@ -56,8 +56,12 @@ Python prepares inputs; Java checks literals, the OWL 2 DL profile, consistency
 and named-class satisfiability. Only BIA's local axioms are reasoned over; external
 terms receive declarations checked against their source vocabularies by pytest.
 Imports are rejected. Per-run input copies, `inputs.sha256` and diagnostics are
-saved under `artifacts/ontology-consistency/`. This does not validate submission
-data or establish general OWL support.
+saved under `artifacts/ontology-consistency/`: `ontology-bundled-*` for the BIA
+ontology and `ontology-custom-*` for custom inputs, including checker regression
+tests. Each successful run produces `profile.txt` for OWL 2 DL profile checks and
+`reason.txt` for consistency and named-class satisfiability. Failed runs may stop
+before writing both reports; inspect `java.log` for Java failures.
+This does not validate submission data or establish general OWL support.
 
 ## RO-Crate
 

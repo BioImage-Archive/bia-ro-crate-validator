@@ -26,7 +26,12 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.rio.RioParserImpl;
 import org.semanticweb.owlapi.rio.RioTurtleParserFactory;
 
-/** Validate Turtle literals, OWL parsing/profile and HermiT reasoning in order. */
+/**
+ * Validate the combined input.ttl prepared by check_ontology.py after its RDF checks.
+ * Write profile.txt with OWL 2 DL profile violations (or profile success), then
+ * reason.txt on successful consistency and named-class satisfiability checks.
+ * Earlier failures can leave one or both reports absent; details go to java.log.
+ */
 final class CheckOntology {
     public static void main(String[] args) throws Exception {
         Path input = Path.of(args[0]);
@@ -52,9 +57,11 @@ final class CheckOntology {
                 });
             }
         }));
-        manager.getIRIMappers().clear();
-        // Imports are rejected in Python; forbid resolution here as well.
-        manager.getIRIMappers().add(iri -> {
+        // check_ontology.py rejects owl:imports before invoking this worker.
+        // Replace ontology IRI lookup mappings with one that throws, so OWLAPI
+        // cannot resolve imports to local files or remote documents.
+        manager.clearIRIMappers();
+        manager.addIRIMapper(iri -> {
             throw new IllegalArgumentException("Unpinned import: " + iri);
         });
         // OWLAPI's strict RDF mode rejects valid anonymous restrictions. Inspect
