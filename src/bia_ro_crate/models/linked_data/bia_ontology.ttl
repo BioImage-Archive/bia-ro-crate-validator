@@ -40,8 +40,8 @@ bia:accessionId a owl:DatatypeProperty;
     rdfs:label "accession id"@en ;
     rdfs:comment 
         """A string uniquely identifying an addition of a (new) item to the database in which it is stored. 
-        This property should be expected to be of type owl:InverseFunctionalProperty in the context of the database of the item (only).
-        E.g. S-BIAD1234 uniquiely identifies a study in the BioImage Archive, but might be appear as the accessionId of an unrelated item in a different database."""@en ;
+        An identity key using this property must be scoped to the database of the item.
+        E.g. S-BIAD1234 uniquely identifies a study in the BioImage Archive, but might be the accessionId of an unrelated item in a different database."""@en ;
     rdfs:subPropertyOf dc:identifier ;
     rdfs:range xsd:string .
 
@@ -121,7 +121,7 @@ bia:Contributor a owl:Class ;
 bia:website a owl:DatatypeProperty ;
     rdfs:label "website"@en ;
     rdfs:comment "A link to a website which holds information about the subject."@en ;
-    rdfs:range schema:URL .
+    rdfs:range xsd:string .
 
 bia:role a owl:DatatypeProperty ;
     rdfs:label "role"@en ;
