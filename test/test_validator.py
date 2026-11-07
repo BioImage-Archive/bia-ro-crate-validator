@@ -6,6 +6,8 @@ import pytest_check as check
 from typer.testing import CliRunner
 
 from bia_ro_crate.cli import bia_ro_crate
+from bia_ro_crate.core.parser.ro_crate_parser import ROCrateParser
+from bia_ro_crate.validator.validation import ValidationResponseMode, bia_roc_validation
 
 runner = CliRunner()
 
@@ -176,3 +178,19 @@ def test_ro_crate_context_validation_error_messages(
         severity, error_message = captured_message
         for expected_message_snippet in messages[message_position]:
             check.is_in(expected_message_snippet, error_message)
+
+
+@pytest.mark.parametrize("grouped", [False, True])
+def test_report_mode_propagates_unexpected_parser_failures(
+    tmp_path, monkeypatch, grouped
+):
+    expected = FileNotFoundError
+    if grouped:
+
+        def fail(self):
+            raise ExceptionGroup("Operational failure", [OSError("read failed")])
+
+        monkeypatch.setattr(ROCrateParser, "parse", fail)
+        expected = ExceptionGroup
+    with pytest.raises(expected):
+        bia_roc_validation(tmp_path / "missing-crate", ValidationResponseMode.report)

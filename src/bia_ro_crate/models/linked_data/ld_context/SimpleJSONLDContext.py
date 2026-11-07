@@ -1,4 +1,8 @@
+from copy import deepcopy
 from typing import Iterable
+from urllib.parse import urlsplit
+
+from rdflib import URIRef
 
 from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
 
@@ -26,14 +30,18 @@ class SimpleJSONLDContext:
             self.add_id_rename(renamed_id_key)
 
     def to_dict(self) -> dict:
-        context_dict = self.prefixes.copy()
+        # Conventional namespaces imply a prefix; other IRIs need an explicit flag.
+        context_dict = {
+            prefix: iri if iri.endswith(("/", "#")) else {"@id": iri, "@prefix": True}
+            for prefix, iri in self.prefixes.items()
+        }
 
         for term in self.terms.values():
             context_dict |= term.to_mapping_dict(self.prefixes)
 
         # merge any special mappings (e.g. @type container entries or renamed @id)
         if getattr(self, "_special_mappings", None):
-            context_dict |= self._special_mappings
+            context_dict |= deepcopy(self._special_mappings)
 
         return dict(sorted(context_dict.items()))
 
@@ -63,6 +71,37 @@ class SimpleJSONLDContext:
     def add_term(self, term: ContextTerm) -> None:
         self.terms[term.field_name] = term
 
+    def add_terms(self, terms: Iterable[ContextTerm]) -> None:
+        """Add detached terms together, rejecting conflicting definitions."""
+        additions = SimpleJSONLDContext()
+        for term in terms:
+            if not isinstance(term, ContextTerm):
+                raise TypeError("terms must contain ContextTerm instances")
+            if term.field_name.startswith("@"):
+                raise ValueError(
+                    f"Context term collides with a keyword: {term.field_name}"
+                )
+            previous = additions.terms.get(term.field_name)
+            if previous is not None and previous != term:
+                raise ValueError(f"Context definition conflict: {term.field_name}")
+            additions.add_term(term)
+        if additions.terms:
+            self.terms = self.merge(additions).terms
+
+    def resolve_iri(self, name: str) -> URIRef | None:
+        """Resolve a declared term, compact IRI or absolute IRI."""
+        if name in self.terms:
+            return self.terms[name].full_uri
+        if ":" in name:
+            prefix, suffix = name.split(":", 1)
+            if prefix in self.prefixes and not suffix.startswith("//"):
+                return URIRef(self.prefixes[prefix] + suffix)
+            if urlsplit(name).scheme and not any(
+                c.isspace() or ord(c) < 32 for c in name
+            ):
+                return URIRef(name)
+        return None
+
     def remove_term(self, term: ContextTerm | str) -> None:
         if isinstance(term, ContextTerm):
             if term.field_name in self.terms and self.terms[term.field_name] == term:
@@ -74,25 +113,18 @@ class SimpleJSONLDContext:
                 f"term {term} is not a string field name, nor a ContextTerm"
             )
 
-    def merge(
-        self, *contexts: Iterable["SimpleJSONLDContext"]
-    ) -> "SimpleJSONLDContext":
-        """Merge multiple SimpleJSONLDContext instances into a new one."""
-        merged_prefixes = self.prefixes.copy()
-        merged_terms = self.terms.copy()
-
-        context: SimpleJSONLDContext
-        for context in contexts:
-            for prefix, uri in context.prefixes.items():
-                if prefix in merged_prefixes and merged_prefixes[prefix] != uri:
-                    raise ValueError(f"Prefix conflict: {prefix} maps to multiple URIs")
-                merged_prefixes[prefix] = uri
-
-            existing_fields = {term.field_name for term in merged_terms.values()}
-            for term_field_name, term in context.terms.items():
-                if term_field_name not in existing_fields:
-                    merged_terms[term_field_name] = term
-
-        return SimpleJSONLDContext(
-            prefixes=merged_prefixes, terms=merged_terms.values()
-        )
+    def merge(self, *contexts: "SimpleJSONLDContext") -> "SimpleJSONLDContext":
+        """Return detached definitions, rejecting conflicting names across contexts."""
+        merged = SimpleJSONLDContext()
+        owners = {}
+        for context in (self, *contexts):
+            for collection in ("prefixes", "terms", "_special_mappings"):
+                target = getattr(merged, collection)
+                for name, definition in getattr(context, collection).items():
+                    if name in owners and (
+                        owners[name] != collection or target[name] != definition
+                    ):
+                        raise ValueError(f"Context definition conflict: {name}")
+                    target[name] = deepcopy(definition)
+                    owners[name] = collection
+        return merged
