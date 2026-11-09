@@ -189,11 +189,16 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         return SimpleJSONLDContext.SimpleJSONLDContext(prefixes=prefixes, terms=terms)
 
     def _pre_parse_validation(self, ro_crate_metadata_path: Path) -> None:
-        self._id_reference_validation(ro_crate_metadata_path)
+        graph = Graph()
+        graph.parse(ro_crate_metadata_path, format="json-ld")
+        self._id_reference_validation(ro_crate_metadata_path, graph)
+        self._rdf_collection_validation(graph)
         self._base_ro_crate_validation(ro_crate_metadata_path)
         self._raise_errors()
 
-    def _id_reference_validation(self, ro_crate_metadata_path: Path) -> None:
+    def _id_reference_validation(
+        self, ro_crate_metadata_path: Path, graph: Graph
+    ) -> None:
         """
         Validates that, for all statements, <subject> <predicate> <object>:
         1. All <objects> that are URIReferences exist in the document (for relevant properties)
@@ -202,9 +207,6 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
         Currently for 1 is taking all URIRef <objects>, then removing those where the <predicate> was RDF.type, or DUBLINCORE.conformsTo, since these are expected to be external references.
         The propertyURL for columns is expected to apepar as a string rather than a URIRef.
         """
-
-        graph = Graph()
-        graph.parse(ro_crate_metadata_path, format="json-ld")
 
         subjects = set(s for s in graph.subjects(unique=True) if isinstance(s, URIRef))
 
@@ -251,6 +253,22 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
                 )
             )
 
+    def _rdf_collection_validation(self, graph: Graph) -> None:
+        """Reject multiple distinct first/rest values in the input graph."""
+        ambiguous = False
+        for predicate in (RDF.first, RDF.rest):
+            cells = graph.subjects(predicate=predicate, unique=True)
+            if any(len(set(graph.objects(cell, predicate))) > 1 for cell in cells):
+                self._parse_issues.append(
+                    ValidationError(
+                        severity=Severity.ERROR,
+                        message=f"Ambiguous RDF collection: multiple values for {predicate}.",
+                    )
+                )
+                ambiguous = True
+        if ambiguous:
+            self._raise_errors()
+
     def _base_ro_crate_validation(self, ro_crate_metadata_path: Path) -> None:
         """
         Checks for any errors being raised from the generic ro-crate validator.
@@ -260,8 +278,6 @@ class JSONLDMetadataParser(ROCrateMetadataParser):
             - is flattend json-ld
             - every field has a term in the context
             - the minimum properties are defined on the ro-crate-metadata object, root dataset object, and that File & Dataset objects are connected back to the root dataset.
-
-        SHACL shapes can be used as a profile definition to validate the graph, but we currently do not use this.
         """
         settings = services.ValidationSettings(
             rocrate_uri=ro_crate_metadata_path.parent,
