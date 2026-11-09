@@ -332,3 +332,11 @@ def test_context_merge_preserves_keyword_settings_and_rejects_conflicts():
         SimpleJSONLDContext(prefixes={"ex": URIRef("urn:")})
     )
     assert same_prefix.prefixes == {"ex": "urn:"}
+
+
+def test_multiple_field_contexts_are_rejected():
+    class Record(LDModel):
+        value: Annotated[str, FieldContext("urn:first"), FieldContext("urn:second")]
+
+    with pytest.raises(ValueError, match="multiple FieldContexts"):
+        Record.generate_field_context()
