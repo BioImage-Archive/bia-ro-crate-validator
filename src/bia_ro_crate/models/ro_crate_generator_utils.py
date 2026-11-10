@@ -1,4 +1,3 @@
-
 from rdflib import URIRef
 
 from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
@@ -19,13 +18,16 @@ def get_standard_bia_context_prefixes() -> dict[str, str]:
     return bia_context_prefixes
 
 
-def generate_standard_bia_context(prefixes: dict | None = None)-> SimpleJSONLDContext:
+def generate_standard_bia_context(prefixes: dict | None = None) -> SimpleJSONLDContext:
     class_map = get_all_ro_crate_classes()
 
-    context = SimpleJSONLDContext(prefixes=get_standard_bia_context_prefixes(), force_type_container=True)
+    context = SimpleJSONLDContext(
+        prefixes=get_standard_bia_context_prefixes() if prefixes is None else prefixes,
+        force_type_container=True,
+    )
 
     for ldclass in class_map.values():
-        for field_term in ldclass.generate_field_context():
+        for field_term in ldclass.generate_field_context(by_alias=True):
             context.add_term(field_term)
 
     return context
@@ -36,12 +38,11 @@ def generate_embeded_bia_context(prefixes: dict | None = None) -> dict:
     context = {
         "@context": [
             "https://w3id.org/ro/crate/1.1/context",
-            bia_specific_context.to_dict()
+            bia_specific_context.to_dict(),
         ]
     }
     return context
 
-   
 
 def get_all_ro_crate_classes() -> dict[URIRef, type[ROCrateModel]]:
     return MODEL_REGISTRY
