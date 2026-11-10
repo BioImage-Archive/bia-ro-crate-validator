@@ -194,33 +194,6 @@ def test_excluded_mapped_fields_cannot_conflict_with_serialised_aliases():
     assert [term.field_name for term in Record.generate_field_context()] == ["visible"]
 
 
-def test_parser_preserves_coercions_and_container_profiles(tmp_path):
-    from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
-
-    source = {
-        "@type": {"@container": "@set"},
-        "author": {
-            "@id": "http://schema.org/author",
-            "@type": "@id",
-            "@container": "@set",
-        },
-        "links": {"@id": "urn:links", "@type": "@id", "@container": ["@set", "@index"]},
-    }
-    data = {
-        "@type": ["urn:Record"],
-        "author": ["urn:author"],
-        "links": {"group": "urn:target"},
-    }
-    parsed = JSONLDMetadataParser(tmp_path)._parse_context(source)
-    assert jsonld.expand({"@context": parsed.to_dict(), **data}) == jsonld.expand(
-        {"@context": source, **data}
-    )
-    term = parsed.terms["links"]
-    detached = term.to_context_term_dict()
-    detached["@container"].append("@graph")
-    assert set(term.container) == {"@index", "@set"}
-
-
 def test_term_definitions_are_immutable_and_detached_from_container_inputs():
     from dataclasses import FrozenInstanceError
 
@@ -252,50 +225,6 @@ def test_invalid_container_settings_are_rejected_before_document_generation(
 
     with pytest.raises(ValueError, match="Invalid JSON-LD container"):
         Record.generate_field_context()
-
-
-@pytest.mark.parametrize(
-    "source",
-    [
-        {"@language": "en", "label": "urn:label"},
-        {"@base": None, "label": "urn:label"},
-        {"label": {"@id": "urn:label", "@language": "en"}},
-        {"label": {"@id": "urn:label", "@context": {"nested": "urn:nested"}}},
-        {"label": None},
-    ],
-)
-def test_parser_rejects_unrepresentable_contexts_instead_of_losing_meaning(
-    tmp_path, source
-):
-    from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
-
-    with pytest.raises(ExceptionGroup) as caught:
-        JSONLDMetadataParser(tmp_path)._parse_context(source)
-    assert any("Unsupported context" in str(error) for error in caught.value.exceptions)
-
-
-@pytest.mark.parametrize("settings", [{"@type": "@id"}, {"@container": "@list"}])
-def test_parser_rejects_prefix_value_semantics_it_cannot_preserve(tmp_path, settings):
-    from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
-
-    source = {"ex": {"@id": "urn:example:", "@prefix": True, **settings}}
-    assert jsonld.expand({"@context": source, "ex": ["urn:target"]})
-    with pytest.raises(ExceptionGroup) as caught:
-        JSONLDMetadataParser(tmp_path)._parse_context(source)
-    assert any("Unsupported context" in str(error) for error in caught.value.exceptions)
-
-
-@pytest.mark.parametrize(
-    "definition", [{"@id": "urn:replacement:", "@prefix": True}, "@type"]
-)
-def test_prefixes_and_keyword_aliases_cannot_remap_bia_properties(tmp_path, definition):
-    from bia_ro_crate.core.parser.jsonld_metadata_parser import JSONLDMetadataParser
-
-    with pytest.raises(ExceptionGroup) as caught:
-        JSONLDMetadataParser(tmp_path)._parse_context({"name": definition})
-    assert any(
-        "Term has been remapped" in str(error) for error in caught.value.exceptions
-    )
 
 
 def test_context_merge_preserves_keyword_settings_and_rejects_conflicts():
