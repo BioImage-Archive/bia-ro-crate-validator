@@ -4,6 +4,7 @@ from pathlib import Path
 
 from bia_ro_crate.core.parser.ro_crate_parser import ROCrateParser
 from bia_ro_crate.core.validation import Severity
+from bia_ro_crate.validator.profiles import ValidationProfile
 
 logger = logging.getLogger("__main__." + __name__)
 logging.getLogger().setLevel(logging.INFO)
@@ -36,9 +37,9 @@ def _report_issues(parser: ROCrateParser) -> dict[str, None | dict[str, list[dic
             highest_error_level = issue.severity
 
     report = {
-        "highest_error_level": str(highest_error_level)
-        if highest_error_level
-        else None,
+        "highest_error_level": (
+            str(highest_error_level) if highest_error_level else None
+        ),
         "issues": report_by_severity,
     }
 
@@ -48,7 +49,14 @@ def _report_issues(parser: ROCrateParser) -> dict[str, None | dict[str, list[dic
 def bia_roc_validation(
     ro_crate_directory: Path,
     validation_mode: ValidationResponseMode = ValidationResponseMode.error,
+    profile: ValidationProfile | str = ValidationProfile.minimal,
 ):
+    profile = ValidationProfile(profile)
+    if profile != ValidationProfile.minimal:
+        from bia_ro_crate.validator.profiles.bia_submission_v0 import validate
+
+        return validate(ro_crate_directory, validation_mode)
+
     ro_crate_parser = ROCrateParser(ro_crate_directory)
 
     try:

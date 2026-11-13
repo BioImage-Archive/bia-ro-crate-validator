@@ -181,6 +181,36 @@ The more specific recommendations on Biological Imaging Metadata from the _'Reco
 
 ## Validation of BIA RO-Crates
 
+### Validation profiles
+
+`bia-ro-crate validate PATH` uses the `minimal` profile by default and retains
+the existing validation behaviour. To apply the additional, versioned BIA
+submission requirements, select the profile explicitly:
+
+```shell
+bia-ro-crate validate PATH --profile bia-submission-v0
+bia-ro-crate validate PATH --profile bia-submission-v0 --report-json
+```
+
+The Python API accepts the same selection via the optional `profile` argument
+to `bia_roc_validation`. The JSON report has the same structure as the minimal
+profile. Required submission checks are reported as errors and recommended
+metadata as warnings. The profile checks file-list metadata and references; it
+does not compare the file list to the files on disk.
+
+The submission profile accepts `filepath` or `file_path` as the first column.
+For annotation datasets, it requires a `source image`, `source_image`, or
+`associated_source_image` column with property URL
+`http://bia/associatedSourceImage`. Existing minimal reference validation still
+applies: a source reference whose target is not `http://bia/Image` is an error.
+Controlled vocabulary membership for annotation method and source
+indicator values is not yet checked; the vocabulary values are not bundled.
+The conditional recommendation for signal-channel identifiers is deferred.
+The `type` column accepts only the full IRIs `http://bia/Image`,
+`http://bia/AnnotationData`, and `http://bia/File`. Datasets and the imaging,
+preparation, annotation, and signal-channel entities must use relative IRIs;
+blank-node identifiers are not accepted for those entities in this profile.
+
 If you are not familiar with JSON-LD, there is a short introduction a the bottom of this readme.
 
 ### JSON-LD validation
