@@ -8,6 +8,7 @@ from rich.logging import RichHandler
 
 from bia_ro_crate.models.ro_crate_generator_utils import generate_embeded_bia_context
 from bia_ro_crate.validator import bia_roc_validation
+from bia_ro_crate.validator.profiles import ValidationProfile
 
 bia_ro_crate = typer.Typer(
     name="bia-ro-crate", context_settings={"help_option_names": ["-h", "--help"]}
@@ -51,15 +52,19 @@ def validate_ro_crate(
         ),
     ],
     report_json: bool = False,
+    profile: Annotated[
+        ValidationProfile,
+        typer.Option(help="Validation profile to apply."),
+    ] = ValidationProfile.minimal,
 ):
     if crate_path.is_file():
         crate_path = crate_path.parent
 
     if report_json:
-        report = bia_roc_validation(crate_path, "report")
+        report = bia_roc_validation(crate_path, "report", profile=profile)
         print(json.dumps(report, indent=2))
     else:
-        bia_roc_validation(crate_path)
+        bia_roc_validation(crate_path, profile=profile)
 
 
 @bia_ro_crate.command("generate-context")
@@ -69,11 +74,12 @@ def generate_ro_crate_context(
         typer.Argument(
             help="Path to file where a the json-ld context should be written"
         ),
-    ] = Path(__file__).parent / "models" / "linked_data" / "bia_ro_crate_context_NEW.jsonld",
+    ] = Path(__file__).parent
+    / "models"
+    / "linked_data"
+    / "bia_ro_crate_context_NEW.jsonld",
 ):
     context = generate_embeded_bia_context()
 
     with open(output_file, "w") as f:
         f.write(json.dumps(context, indent=2))
-
-    
