@@ -1,12 +1,22 @@
 import copy
 import json
+from io import StringIO
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from typer.testing import CliRunner
 
 from bia_ro_crate.cli import bia_ro_crate
+from bia_ro_crate.core.bia_ro_crate_metadata import BIAROCrateMetadata
+from bia_ro_crate.core.bia_submission_metadata import BIASubmissionMetadata
+from bia_ro_crate.core.file_list import FileList
 from bia_ro_crate.core.validation import Severity
+from bia_ro_crate.models import ro_crate_models as models
+from bia_ro_crate.models.linked_data.ld_context.ContextTerm import ContextTerm
+from bia_ro_crate.models.linked_data.ld_context.SimpleJSONLDContext import (
+    SimpleJSONLDContext,
+)
 from bia_ro_crate.validator.profiles.bia_submission_v0 import SubmissionChecks
 
 
@@ -31,7 +41,7 @@ def submission(tmp_path):
             "author": [{"@id": "#author"}],
             "hasPart": [{"@id": "#dataset"}, {"@id": "file_list.tsv"}],
         },
-        {"@id": "#author", "@type": ["Person", "bia:Contributor"]},
+        {"@id": "#author", "@type": ["Person", "bia:Contributor"], "name": "Author"},
         {
             "@id": "#dataset",
             "@type": ["Dataset", "bia:Dataset"],
@@ -88,16 +98,46 @@ def submission(tmp_path):
     rows = "file_path\tdataset\ttype\tsource_image\nimage.tif\t#dataset\thttp://bia/Image\t\n"
 
     def write(data=None, tsv=None):
-        (tmp_path / "ro-crate-metadata.json").write_text(
-            json.dumps(
-                {"@context": context, "@graph": data if data is not None else entities}
-            ),
-            encoding="utf-8",
+        raw_entities = data if data is not None else entities
+        model_by_type = {
+            "bia:Study": models.Study,
+            "bia:Contributor": models.Contributor,
+            "bia:Dataset": models.Dataset,
+            "bia:AnnotationMethod": models.AnnotationMethod,
+            "bia:FileList": models.FileList,
+            "csvw:Schema": models.TableSchema,
+            "csvw:Column": models.Column,
+            "bia:BioSample": models.BioSample,
+            "bia:Taxon": models.Taxon,
+            "bia:SpecimenImagingPreparationProtocol": models.SpecimenImagingPreparationProtocol,
+            "bia:ImageAcquisitionProtocol": models.ImageAcquisitionProtocol,
+            "bia:SignalChannel": models.SignalChannelInformation,
+            "bia:Affiliation": models.Affiliation,
+        }
+        objects = {}
+        for entity in raw_entities:
+            types = entity["@type"]
+            types = [types] if isinstance(types, str) else types
+            cls = next(model_by_type[t] for t in types if t in model_by_type)
+            obj = cls.model_validate(entity)
+            objects[obj.id] = obj
+        parsed_context = SimpleJSONLDContext(
+            prefixes={k: v for k, v in context.items() if k in ("bia", "csvw")},
+            terms=[
+                ContextTerm(full_uri=v, field_name=k)
+                for k, v in context.items()
+                if k not in ("bia", "csvw")
+            ],
         )
-        (tmp_path / "file_list.tsv").write_text(
-            tsv if tsv is not None else rows, encoding="utf-8"
+        metadata = BIAROCrateMetadata(objects, parsed_context, tmp_path)
+        file_list = metadata.get_file_list_entity()
+        schema = metadata.get_object(file_list.tableSchema.id)
+        columns = {ref.id: metadata.get_object(ref.id) for ref in schema.column}
+        frame = pd.read_csv(StringIO(tsv if tsv is not None else rows), sep="\t")
+        parsed_file_list = FileList(
+            schema=columns, data=frame, ro_crate_id=file_list.id
         )
-        return SubmissionChecks(tmp_path).run()
+        return SubmissionChecks(BIASubmissionMetadata(metadata, parsed_file_list)).run()
 
     return copy.deepcopy(entities), write
 
@@ -192,13 +232,11 @@ def test_each_imaging_dataset_requires_its_own_image_and_row(submission):
 
 def test_all_file_list_columns_require_schema_definitions(submission):
     entities, write = submission
-    issues = errors(
+    with pytest.raises(ValueError, match="Schema does not contain columns"):
         write(
             entities,
             "file_path\tdataset\ttype\tsource_image\textra\nimage.tif\t#dataset\thttp://bia/Image\t\tvalue\n",
         )
-    )
-    assert any("column 'extra'" in msg for msg in issues)
 
 
 def test_repeated_labels_across_datasets_are_allowed(submission):
@@ -232,6 +270,7 @@ def test_repeated_labels_across_datasets_are_allowed(submission):
 def test_reference_target_type_is_checked(submission):
     entities, write = submission
     entities[3]["@type"] = "bia:BioSample"
+    entities[3]["organismClassification"] = []
     issues = errors(write(entities))
     assert any(
         "associatedAnnotationMethod" in msg and "must have type" in msg
@@ -434,6 +473,8 @@ def test_existing_minimal_and_submission_profile_api(tmp_path):
     result = bia_roc_validation(tmp_path, "report", profile="bia-submission-v0")
     assert set(result) == {"highest_error_level", "issues"}
     assert result["issues"]["ERROR"] == []
+    for severity, issues in default_report["issues"].items():
+        assert all(issue in result["issues"][severity] for issue in issues)
 
     path = tmp_path / "file_list.tsv"
     original = path.read_text()
@@ -459,5 +500,7 @@ def test_existing_minimal_and_submission_profile_api(tmp_path):
     )
     result = bia_roc_validation(tmp_path, "report", profile="bia-submission-v0")
     assert any(
-        "column 'extra'" in issue["message"] for issue in result["issues"]["ERROR"]
+        "Schema does not contain columns" in issue["message"]
+        and "extra" in issue["message"]
+        for issue in result["issues"]["ERROR"]
     )

@@ -26,7 +26,7 @@ report = bia_roc_validation(
 )
 ```
 
-Required violations are reported as errors. Missing recommended properties are reported as warnings. The existing validation summary and report structure are used for both profiles. In the existing JSON report mode, inspect `highest_error_level` and `issues` for the outcome; the CLI retains its existing report-mode exit behaviour.
+Required violations are reported as errors. Missing recommended properties are reported as warnings. The existing validation summary and report structure are used for both profiles. Profile-specific checks run after successful parsing; when parsing fails, the parser's findings are reported first. In the existing JSON report mode, inspect `highest_error_level` and `issues` for the outcome; the CLI retains its existing report-mode exit behaviour.
 
 ## Submission structure
 

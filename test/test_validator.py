@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 
@@ -15,6 +16,7 @@ def get_test_ro_crate_path(accession_id, test_folder="validator") -> Path:
     return Path(__file__).parent / test_folder / "input_ro_crate" / accession_id
 
 
+@pytest.mark.parametrize("profile", [None, "minimal", "bia-submission-v0"])
 @pytest.mark.parametrize(
     "accession_id,expected_result,messages",
     [
@@ -130,7 +132,7 @@ def get_test_ro_crate_path(accession_id, test_folder="validator") -> Path:
     ],
 )
 def test_ro_crate_context_validation_error_messages(
-    accession_id, expected_result, messages, caplog
+    accession_id, expected_result, messages, caplog, profile
 ):
     """
     See parametrisation above for test expectations.
@@ -153,11 +155,16 @@ def test_ro_crate_context_validation_error_messages(
     Would result in a check that the validator returned 2 messages, and that each message contained all (2) expected substrings
     """
 
+    if profile == "bia-submission-v0" and expected_result == 0:
+        pytest.skip("Minimal-valid fixtures do not necessarily meet the BIA profile")
+
     caplog.set_level(logging.ERROR)
 
     crate_path = get_test_ro_crate_path(accession_id)
 
     arguments = ["validate", str(crate_path)]
+    if profile is not None:
+        arguments += ["--profile", profile]
     result = runner.invoke(bia_ro_crate, arguments)
     assert result.exit_code == expected_result
 
@@ -177,6 +184,17 @@ def test_ro_crate_context_validation_error_messages(
         severity, error_message = captured_message
         for expected_message_snippet in messages[message_position]:
             check.is_in(expected_message_snippet, error_message)
+
+    if profile == "bia-submission-v0":
+        report_result = runner.invoke(bia_ro_crate, arguments + ["--report-json"])
+        assert report_result.exit_code == 0
+        report = json.loads(report_result.stdout)
+        report_errors = report["issues"]["ERROR"]
+        assert len(report_errors) == len(messages)
+        for expected, issue in zip(messages, report_errors):
+            text = f"{issue.get('location_description') or ''}: {issue['message']}"
+            for snippet in expected:
+                check.is_in(snippet, text)
 
 
 def test_parser_preserves_coercions_and_container_profiles(tmp_path):
