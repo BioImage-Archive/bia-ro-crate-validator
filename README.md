@@ -192,6 +192,9 @@ bia-ro-crate validate PATH --profile bia-submission-v0
 bia-ro-crate validate PATH --profile bia-submission-v0 --report-json
 ```
 
+See the [BIA submission profile v0](docs/profiles/bia-submission-v0.md) for the
+human-readable requirements and the scope of the implemented checks.
+
 The Python API accepts the same selection via the optional `profile` argument
 to `bia_roc_validation`. The JSON report has the same structure as the minimal
 profile. Required submission checks are reported as errors and recommended
