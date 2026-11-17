@@ -1,6 +1,3 @@
-from enum import StrEnum
+from .validation_profile import ValidationProfile
 
-
-class ValidationProfile(StrEnum):
-    minimal = "minimal"
-    bia_submission_v0 = "bia-submission-v0"
+__all__ = ["ValidationProfile"]

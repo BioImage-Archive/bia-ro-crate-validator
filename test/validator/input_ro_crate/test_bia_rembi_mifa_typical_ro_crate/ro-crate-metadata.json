@@ -1,0 +1,556 @@
+{
+  "@context": [
+    "https://w3id.org/ro/crate/1.1/context",
+    {
+      "@type": {
+        "@container": "@set"
+      },
+      "accessionId": {
+        "@id": "bia:accessionId"
+      },
+      "acknowledgement": {
+        "@id": "bia:acknowledgement"
+      },
+      "additionalType": {
+        "@id": "schema:additionalType"
+      },
+      "address": {
+        "@id": "schema:address"
+      },
+      "annotationCoverage": {
+        "@id": "bia:annotationCoverage"
+      },
+      "annotationCriteria": {
+        "@id": "bia:annotationCriteria"
+      },
+      "annotationMethod": {
+        "@id": "bia:annotationMethod",
+        "@container": "@set"
+      },
+      "annotationSourceIndicator": {
+        "@id": "bia:annotationSourceIndicator"
+      },
+      "associatedAnnotationMethod": {
+        "@id": "bia:associatedAnnotationMethod",
+        "@container": "@set"
+      },
+      "associatedBiologicalEntity": {
+        "@id": "bia:associatedBiologicalEntity",
+        "@container": "@set"
+      },
+      "associatedCreationProcess": {
+        "@id": "bia:associatedCreationProcess"
+      },
+      "associatedImageAcquisitionProtocol": {
+        "@id": "bia:associatedImageAcquisitionProtocol",
+        "@container": "@set"
+      },
+      "associatedImageAnalysisMethod": {
+        "@id": "bia:associatedAnalysisMethod",
+        "@container": "@set"
+      },
+      "associatedImageCorrelationMethod": {
+        "@id": "bia:associatedCorrelationMethod",
+        "@container": "@set"
+      },
+      "associatedProtocol": {
+        "@id": "bia:associatedProtocol",
+        "@container": "@set"
+      },
+      "associatedSourceImage": {
+        "@id": "bia:associatedSourceImage",
+        "@container": "@set"
+      },
+      "associatedSpecimen": {
+        "@id": "bia:associatedSubject"
+      },
+      "associatedSpecimenImagingPreparationProtocol": {
+        "@id": "bia:associatedImagingPreparationProtocol",
+        "@container": "@set"
+      },
+      "author": {
+        "@id": "schema:author",
+        "@container": "@set"
+      },
+      "authorNames": {
+        "@id": "bia:authorNames"
+      },
+      "bia": "http://bia/",
+      "biologicalEntity": {
+        "@id": "bia:sampleOf",
+        "@container": "@set"
+      },
+      "channelBiologicalEntity": {
+        "@id": "bia:channelBiologicalEntity"
+      },
+      "channelContentDescription": {
+        "@id": "bia:channelContentDescription"
+      },
+      "column": {
+        "@id": "csvw:column",
+        "@container": "@set"
+      },
+      "columnName": {
+        "@id": "csvw:name"
+      },
+      "commonName": {
+        "@id": "http://rs.tdwg.org/dwc/terms/vernacularName"
+      },
+      "csvw": "http://www.w3.org/ns/csvw#",
+      "datePublished": {
+        "@id": "schema:datePublished"
+      },
+      "dc": "http://purl.org/dc/terms/",
+      "description": {
+        "@id": "schema:description"
+      },
+      "doi": {
+        "@id": "bia:doi"
+      },
+      "email": {
+        "@id": "schema:email"
+      },
+      "experimentalVariableDescription": {
+        "@id": "bia:experimentalVariableDescription",
+        "@container": "@set"
+      },
+      "extrinsicVariableDescription": {
+        "@id": "bia:extrinsicVariableDescription",
+        "@container": "@set"
+      },
+      "fbbiId": {
+        "@id": "bia:fbbiId",
+        "@container": "@set"
+      },
+      "featuresAnalysed": {
+        "@id": "bia:featuresAnalysed"
+      },
+      "fiducialsUsed": {
+        "@id": "bia:fiducialsUsed"
+      },
+      "funder": {
+        "@id": "schema:funder",
+        "@container": "@set"
+      },
+      "funding": {
+        "@id": "schema:funding",
+        "@container": "@set"
+      },
+      "growthProtocol": {
+        "@id": "bia:growthProtocol"
+      },
+      "hasPart": {
+        "@id": "schema:hasPart",
+        "@container": "@set"
+      },
+      "identifier": {
+        "@id": "schema:identifier"
+      },
+      "imageAcquisitionProtocol": {
+        "@id": "bia:imageAcquisitionProtocol",
+        "@container": "@set"
+      },
+      "imagingInstrumentDescription": {
+        "@id": "bia:imagingInstrumentDescription"
+      },
+      "imagingMethodName": {
+        "@id": "bia:imagingMethodName",
+        "@container": "@set"
+      },
+      "imagingPreparationProtocol": {
+        "@id": "bia:imagingPreparationProtocol",
+        "@container": "@set"
+      },
+      "inputImage": {
+        "@id": "bia:inputImage",
+        "@container": "@set"
+      },
+      "intrinsicVariableDescription": {
+        "@id": "bia:intrinsicVariableDescription",
+        "@container": "@set"
+      },
+      "keywords": {
+        "@id": "schema:keywords",
+        "@container": "@set"
+      },
+      "license": {
+        "@id": "schema:license"
+      },
+      "memberOf": {
+        "@id": "schema:memberOf",
+        "@container": "@set"
+      },
+      "methodType": {
+        "@id": "bia:annotationMethodType",
+        "@container": "@set"
+      },
+      "name": {
+        "@id": "schema:name"
+      },
+      "organismClassification": {
+        "@id": "schema:taxonomicRange",
+        "@container": "@set"
+      },
+      "propertyUrl": {
+        "@id": "csvw:propertyUrl"
+      },
+      "protocol": {
+        "@id": "bia:protocol",
+        "@container": "@set"
+      },
+      "pubmedId": {
+        "@id": "bia:pubmedId"
+      },
+      "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "relatedPublication": {
+        "@id": "bia:relatedPublication",
+        "@container": "@set"
+      },
+      "resultOf": {
+        "@id": "bia:resultOf"
+      },
+      "role": {
+        "@id": "bia:role",
+        "@container": "@set"
+      },
+      "schema": "http://schema.org/",
+      "scientificName": {
+        "@id": "http://rs.tdwg.org/dwc/terms/scientificName"
+      },
+      "seeAlso": {
+        "@id": "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+        "@container": "@set"
+      },
+      "signalChannelInformation": {
+        "@id": "bia:signalChannelInformation",
+        "@container": "@set"
+      },
+      "signalContrastMechanismDescription": {
+        "@id": "bia:signalContrastMechanismDescription"
+      },
+      "signalChannel":{
+        "@id": "bia:signalChannel"
+      },
+      "spatialInformation": {
+        "@id": "bia:spatialInformation"
+      },
+      "subject": {
+        "@id": "bia:subject"
+      },
+      "tableSchema": {
+        "@id": "csvw:tableSchema"
+      },
+      "transformationDescription": {
+        "@id": "bia:transformationDescription"
+      },
+      "transformationMatrix": {
+        "@id": "bia:transformationMatrix"
+      },
+      "website": {
+        "@id": "bia:website"
+      },
+      "yearPublished": {
+        "@id": "bia:yearPublished"
+      }
+    }
+  ],
+  "@graph": [
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "about": {
+        "@id": "./"
+      }
+    },
+    {
+      "@id": "./",
+      "@type": [
+        "Dataset",
+        "bia:Study"
+      ],
+      "name": "example_bia_rembi_mifa_ro_crate",
+      "description": "This is an example submission of a BIA-REMBI-MIFA RO-Crate. ",
+      "author": [
+        {
+          "@id": "#contributor"
+        }
+      ],
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "datePublished": "2019-01-01",
+      "keywords": [
+        "histology",
+        "segmentation"
+      ],
+      "hasPart": [
+        {
+          "@id": "file_list.tsv"
+        },
+        {
+          "@id": "#images"
+        },
+        {
+          "@id": "#masks"
+        },
+        {
+          "@id": "#annotations"
+        }
+      ],
+      "accessionId": "CrowdsourcingDataset-Amgadetal2019",
+      "relatedPublication": [
+        {
+          "@id": "#publication"
+        }
+      ]
+    },
+    {
+      "@id": "#contributor",
+      "@type": [
+        "Person",
+        "bia:Contributor"
+      ],
+      "name": "Name Surname",
+      "address": null,
+      "website": null,
+      "role": [
+        "submitter", 
+        "data steward"
+      ],
+      "memberOf": [
+        {
+          "@id": "https://ror.org/02catss52"
+        }
+      ],
+      "email": null
+    },
+    {
+      "@id": "https://ror.org/02catss52",
+      "@type": [
+          "Organisation",
+          "bia:Affiliation"
+        ],
+        "name": "EMBL-EBI",
+        "address": "Wellcome Genome Campus, Cambridge, CB10 1SD, UK",
+        "website": null
+    },
+    {
+      "@id": "#publication",
+      "@type": "bia:Publication",
+      "name": "Example submission ro-crate",
+      "doi": "https://doi.org/10.1093/bioinformatics/btz083",
+      "authorNames": "Autorname 1, Autorname 2, Autorname 3, Autorname 4, Autorname 5, Autorname 6, Autorname 7"
+    },
+    {
+      "@id": "NCBI:txid9606",
+      "@type": [
+        "bia:Taxon"
+      ],
+      "commonName": "human",
+      "scientificName": "Homo sapiens"
+    },
+    {
+      "@id": "#biosample",
+      "@type": [
+        "bia:BioSample"
+      ],
+      "name": "Breast cancer tissue",
+      "description": "Human breast carcinoma tissue",
+      "organismClassification": [
+        {
+          "@id": "NCBI:txid9606"
+        }
+      ]
+    },
+    {
+      "@id": "#he",
+      "@type": [
+        "bia:SignalChannel"
+      ],
+      "channelContentDescription": "Hematoxylin and eosin staining"
+    },
+    {
+      "@id": "#specimen-prep",
+      "@type": [
+        "bia:SpecimenImagingPreparationProtocol"
+      ],
+      "name": "H&E slide preparation",
+      "description": "Histology slide preparation for brightfield whole-slide imaging.",
+      "signalChannelInformation": [
+        {
+          "@id": "#he"
+        }
+      ]
+    },
+    {
+      "@id": "#image-acquisition",
+      "@type": [
+        "bia:ImageAcquisitionProtocol"
+      ],
+      "name": "Whole-slide",
+      "description": "Whole slide imaging",
+      "imagingInstrumentDescription": "TCGA whole-slide scanner",
+      "imagingMethodName": [
+        "brightfield microscopy"
+      ],
+      "fbbiId": ["http://purl.obolibrary.org/obo/FBbi_00000243"]
+    },
+    {
+      "@id": "#crowdsourced-annotation-masks",
+      "@type": [
+        "bia:AnnotationMethod"
+      ],
+      "name": "Crowdsourced segmentation",
+      "description": "Structured crowdsourcing was used to create segmentation masks and annotation JSON.",
+      "methodType": [
+        "segmentation_mask"
+      ],
+      "annotationCriteria": "Tumour and tissue compartments were marked by human annotators.",
+      "annotationCoverage": "RGB cropped images.",
+      "annotationSourceIndicator": "file_name_exact_match"
+    },
+    {
+      "@id": "#crowdsourced-annotation-json",
+      "@type": [
+        "bia:AnnotationMethod"
+      ],
+      "name": "Crowdsourced segmentation and labelling",
+      "description": "Structured crowdsourcing was used to create segmentation masks and annotation JSON.",
+      "methodType": [
+        "geometrical_annotations",
+        "class_labels"
+      ],
+      "annotationCriteria": "Tumour and tissue compartments were marked by human annotators.",
+      "annotationCoverage": "RGB cropped images.",
+      "annotationSourceIndicator": "file_name_pattern"
+    },
+    {
+      "@id": "#images",
+      "@type": [
+        "bia:Dataset",
+        "Dataset"
+      ],
+      "name": "Images",
+      "description": "Histology images",
+      "associatedBiologicalEntity": [
+        {
+          "@id": "#biosample"
+        }
+      ],
+      "associatedSpecimenImagingPreparationProtocol": [
+        {
+          "@id": "#specimen-prep"
+        }
+      ],
+      "associatedSpecimen": null,
+      "associatedImageAcquisitionProtocol": [
+        {
+          "@id": "#image-acquisition"
+        }
+      ]
+    },
+    {
+      "@id": "#masks",
+      "@type": [
+        "bia:Dataset",
+        "Dataset"
+      ],
+      "name": "Segmentation masks",
+      "description": "Segmentation masks",
+      "associatedAnnotationMethod": [
+        {
+          "@id": "#crowdsourced-annotation-masks"
+        }
+      ]
+    },
+    {
+      "@id": "#annotations",
+      "@type": [
+        "bia:Dataset",
+        "Dataset"
+      ],
+      "name": "Annotation JSON",
+      "description": "Annotation JSON files",
+      "associatedAnnotationMethod": [
+        {
+          "@id": "#crowdsourced-annotation-json"
+        }
+      ]
+    },
+    {
+      "@id": "file_list.tsv",
+      "@type": [
+        "File",
+        "bia:FileList",
+        "csvw:Table"
+      ],
+      "tableSchema": {
+        "@id": "_:ts0"
+      }
+    },
+    {
+      "@id": "_:col0",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "file_path",
+      "propertyUrl": "http://bia/filePath"
+    },
+    {
+      "@id": "_:col1",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "size_in_bytes",
+      "propertyUrl": "http://bia/sizeInBytes"
+    },
+    {
+      "@id": "_:col2",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "dataset",
+      "propertyUrl": "http://schema.org/isPartOf"
+    },
+    {
+      "@id": "_:col3",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "type",
+      "propertyUrl": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+    },
+    {
+      "@id": "_:col4",
+      "@type": [
+        "csvw:Column"
+      ],
+      "columnName": "source_image",
+      "propertyUrl": "http://bia/associatedSourceImage"
+    },
+    {
+      "@id": "_:ts0",
+      "@type": [
+        "csvw:Schema"
+      ],
+      "column": [
+        {
+          "@id": "_:col0"
+        },
+        {
+          "@id": "_:col1"
+        },
+        {
+          "@id": "_:col2"
+        },
+        {
+          "@id": "_:col3"
+        },
+        {
+          "@id": "_:col4"
+        }
+      ]
+    }
+  ]
+}

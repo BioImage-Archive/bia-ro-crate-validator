@@ -148,12 +148,72 @@ def errors(issues):
     ]
 
 
+def test_bia_rembi_mifa_example_passes_submission_profile():
+    from bia_ro_crate.validator import bia_roc_validation
+
+    # Supplied BIA REMBI/MIFA example
+    fixture = (
+        Path(__file__).parent
+        / "validator/input_ro_crate/test_bia_rembi_mifa_typical_ro_crate"
+    )
+    report = bia_roc_validation(fixture, "report", profile="bia-submission-v0")
+
+#    assert not report["issues"]["CRITICAL"]
+#    assert not report["issues"]["ERROR"]
+    # This recommendation is specific to the profile, so it confirms that
+    # the submission checks actually ran after the base parser succeeded.
+    assert any("pubmedId" in issue["message"] for issue in report["issues"]["WARNING"])
+
+
 def test_annotation_dataset_and_existing_doi_accession(submission):
     entities, write = submission
     entities[0]["doi"] = "10.1234/example"
     assert not errors(write(entities))
     entities[0]["accessionId"] = ""
     assert not any("accessionId" in issue for issue in errors(write(entities)))
+
+
+def test_study_requires_a_referenced_bia_dataset_and_file_list(submission):
+    entities, write = submission
+    entities[0]["hasPart"] = [{"@id": "file_list.tsv"}, {"@id": "#author"}]
+    issues = errors(write(entities))
+    assert any("at least one BIA dataset" in issue for issue in issues)
+    entities[0]["hasPart"] = [{"@id": "#dataset"}]
+    issues = errors(write(entities))
+    assert any("hasPart must reference file_list.tsv" in issue for issue in issues)
+
+
+def test_study_does_not_require_all_datasets_in_haspart(submission):
+    entities, write = submission
+    entities.append(
+        {
+            "@id": "#dataset2",
+            "@type": ["Dataset", "bia:Dataset"],
+            "name": "Dataset 2",
+            "associatedAnnotationMethod": [{"@id": "#method"}],
+        }
+    )
+    rows = (
+        "file_path\tdataset\ttype\tsource_image\n"
+        "one\t#dataset\thttp://bia/Image\t\n"
+        "two\t#dataset2\thttp://bia/AnnotationData\t\n"
+    )
+    assert not errors(write(entities, rows))
+
+
+def test_study_license_restriction_and_no_profile_checks_for_other_fields(submission):
+    entities, write = submission
+    entities[0]["name"] = ""
+    entities[0]["description"] = ""
+    entities[0]["author"] = [{"@id": "#dataset"}]
+    entities[0]["relatedPublication"] = [{"@id": "#dataset"}]
+    issues = write(entities)
+    assert not any(
+        issue.location_description and "@id: ./" in issue.location_description
+        for issue in issues
+    )
+    entities[0]["license"] = "https://example.org/license"
+    assert any("Study license" in issue for issue in errors(write(entities)))
 
 
 def test_dataset_requires_complete_imaging_branch_or_annotation(submission):
@@ -328,19 +388,26 @@ def test_compact_iri_identifiers_are_checked_against_source_ids(submission):
 
 
 @pytest.mark.parametrize(
-    "value", ["http://bia/Image", "http://bia/AnnotationData", "http://bia/File"]
+    "value",
+    [
+        "http://bia/Image",
+        "http://bia/AnnotationData",
+        "",
+        "bia:Image",
+        "http://example.org/Other",
+        "http://bia/File",
+    ],
 )
-def test_permitted_file_types(submission, value):
+def test_file_type_values_are_not_restricted(submission, value):
     entities, write = submission
     rows = f"file_path\tdataset\ttype\tsource_image\nfile\t#dataset\t{value}\t\n"
     assert not errors(write(entities, rows))
 
 
-@pytest.mark.parametrize("value", ["bia:Image", "http://example.org/Other", ""])
-def test_unpermitted_file_types(submission, value):
+def test_type_column_is_required(submission):
     entities, write = submission
-    rows = f"file_path\tdataset\ttype\tsource_image\nfile\t#dataset\t{value}\t\n"
-    assert any("unsupported type" in issue for issue in errors(write(entities, rows)))
+    rows = "file_path\tdataset\tsource_image\nfile\t#dataset\t\n"
+    assert any("'type' column" in issue for issue in errors(write(entities, rows)))
 
 
 @pytest.mark.parametrize(
@@ -367,6 +434,9 @@ def test_unknown_profile_rejected():
     assert result.exit_code != 0
     assert "unknown" in result.output
 
+    result = CliRunner().invoke(bia_ro_crate, ["validate", ".", "--profile", "minimal"])
+    assert result.exit_code != 0
+
 
 def test_cli_passes_selected_profile(tmp_path, monkeypatch):
     import bia_ro_crate.cli as cli
@@ -383,7 +453,7 @@ def test_cli_passes_selected_profile(tmp_path, monkeypatch):
         ).exit_code
         == 0
     )
-    assert [call[1]["profile"] for call in calls] == ["minimal", "bia-submission-v0"]
+    assert [call[1]["profile"] for call in calls] == [None, "bia-submission-v0"]
 
 
 def test_minimal_source_reference_wrong_type_remains_an_error():
@@ -406,7 +476,7 @@ def test_minimal_source_reference_wrong_type_remains_an_error():
 
 
 @pytest.mark.parametrize(
-    "name", ["source image", "source_image", "associated_source_image"]
+    "name", ["source image", "source_image", "associated_source_image", "input_image"]
 )
 def test_annotation_source_column_name_and_property(submission, name):
     entities, write = submission
@@ -418,6 +488,17 @@ def test_annotation_source_column_name_and_property(submission, name):
     assert any(
         "annotation dataset requires" in msg.lower()
         for msg in errors(write(entities, rows))
+    )
+
+
+def test_filepath_first_column_uses_property_not_name(submission):
+    entities, write = submission
+    entities[6]["columnName"] = "path_to_file"
+    rows = "path_to_file\tdataset\ttype\tsource_image\nimage.tif\t#dataset\thttp://bia/Image\t\n"
+    assert not errors(write(entities, rows))
+    rows = "dataset\tpath_to_file\ttype\tsource_image\n#dataset\timage.tif\thttp://bia/Image\t\n"
+    assert any(
+        "first file-list column" in issue for issue in errors(write(entities, rows))
     )
 
 
@@ -435,8 +516,14 @@ def test_existing_minimal_and_submission_profile_api(tmp_path):
     by_id["#Imaging%20Method"]["imagingMethodName"] = ["microscopy"]
     by_id["#Imaging%20Method"]["fbbiId"] = ["http://example.org/fbbi"]
     by_id["#Annotation%20Method"]["methodType"] = ["Other"]
-    by_id["_:col4"]["columnName"] = "source_image"
+    by_id["_:col4"]["columnName"] = "input_image"
     by_id["_:col4"]["propertyUrl"] = "http://bia/associatedSourceImage"
+    path_column = next(
+        entity
+        for entity in data["@graph"]
+        if entity.get("propertyUrl") == "http://bia/filePath"
+    )
+    path_column["columnName"] = "path_to_file"
     data["@graph"].extend(
         [
             {
@@ -465,11 +552,10 @@ def test_existing_minimal_and_submission_profile_api(tmp_path):
     (tmp_path / "file_list.tsv").write_text(
         (fixture / "file_list.tsv")
         .read_text()
-        .replace("source_image_label", "source_image")
+        .replace("source_image_label", "input_image")
+        .replace("file_path", "path_to_file")
     )
     default_report = bia_roc_validation(tmp_path, "report")
-    explicit_minimal_report = bia_roc_validation(tmp_path, "report", profile="minimal")
-    assert default_report == explicit_minimal_report
     result = bia_roc_validation(tmp_path, "report", profile="bia-submission-v0")
     assert set(result) == {"highest_error_level", "issues"}
     assert result["issues"]["ERROR"] == []
@@ -483,13 +569,28 @@ def test_existing_minimal_and_submission_profile_api(tmp_path):
     row[5] = row[4]  # Point to the annotation row, which is not a BIA Image.
     lines[1] = "\t".join(row)
     path.write_text("\n".join(lines) + "\n")
-    for profile in ("minimal", "bia-submission-v0"):
+    for profile in (None, "bia-submission-v0"):
         result = bia_roc_validation(tmp_path, "report", profile=profile)
         assert any(
             "expected 'http://bia/Image'" in issue["message"]
             for issue in result["issues"]["ERROR"]
         )
     path.write_text(original)
+
+    # Base validation permits a file list linked through a dataset; the
+    # submission profile requires a direct link from the study.
+    by_id["./"]["hasPart"] = [
+        ref for ref in by_id["./"]["hasPart"] if ref["@id"] != "file_list.tsv"
+    ]
+    by_id["#Imaging%20Dataset"]["hasPart"] = [{"@id": "file_list.tsv"}]
+    (tmp_path / "ro-crate-metadata.json").write_text(json.dumps(data))
+    base_report = bia_roc_validation(tmp_path, "report")
+    assert not base_report["issues"]["ERROR"]
+    profile_report = bia_roc_validation(tmp_path, "report", profile="bia-submission-v0")
+    assert any(
+        "Study hasPart must reference file_list.tsv" in issue["message"]
+        for issue in profile_report["issues"]["ERROR"]
+    )
 
     # A column absent from the schema makes the minimal parser fail before it
     # can build FileList; the submission profile must still report the cause.

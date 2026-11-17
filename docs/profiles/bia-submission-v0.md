@@ -2,7 +2,7 @@
 
 **Profile identifier:** `bia-submission-v0`
 
-This profile describes the RO-Crate metadata and file list for a BioImage Archive (BIA) submission. It extends the validator's `minimal` profile with submission-specific checks. The minimal profile remains the default when no profile is selected.
+This profile describes the RO-Crate metadata and file list for a BioImage Archive (BIA) submission. Base validation always runs; this optional profile adds submission-specific checks after successful parsing. Without a profile, only base validation is applied.
 
 This document describes the current implementation and the agreed v0 choices. The [BIA data models](../../src/bia_ro_crate/models/ro_crate_models.py) define the representations of individual properties, and the [profile implementation](../../src/bia_ro_crate/validator/profiles/bia_submission_v0.py) defines the additional checks.
 
@@ -26,15 +26,15 @@ report = bia_roc_validation(
 )
 ```
 
-Required violations are reported as errors. Missing recommended properties are reported as warnings. The existing validation summary and report structure are used for both profiles. Profile-specific checks run after successful parsing; when parsing fails, the parser's findings are reported first. In the existing JSON report mode, inspect `highest_error_level` and `issues` for the outcome; the CLI retains its existing report-mode exit behaviour.
+Required violations are reported as errors. Missing recommended properties are reported as warnings. The existing validation summary and report structure are used for base and profile validation. Profile-specific checks run after successful parsing; when parsing fails, the parser's findings are reported first. In the existing JSON report mode, inspect `highest_error_level` and `issues` for the outcome; the CLI retains its existing report-mode exit behaviour.
 
 ## Submission structure
 
-A submission contains `ro-crate-metadata.json` and a TSV file named `file_list.tsv`. The metadata must describe exactly one BIA study and one BIA file list, and at least one BIA dataset. The study is the root dataset of the RO-Crate, and its `hasPart` references every BIA dataset and the file list.
+A submission contains `ro-crate-metadata.json` and a TSV file named `file_list.tsv`. The metadata must describe exactly one BIA study and one BIA file list, and at least one BIA dataset. The study is the root dataset of the RO-Crate, and its `hasPart` directly references the file list and at least one BIA dataset.
 
 The file list entity has `@id` `file_list.tsv` and includes the types `File`, `bia:FileList`, and `csvw:Table`. It refers to a `csvw:Schema` whose `csvw:Column` entities define the file-list columns.
 
-The inherited minimal checks apply, including the RO-Crate 1.1 checks, JSON-LD context and reference validation, model validation, and file-list reference checks. A referenced object that is required to be a particular BIA type must exist in the metadata and have an appropriate type.
+Base checks apply, including the RO-Crate 1.1 checks, JSON-LD context and reference validation, model validation, and file-list reference checks. A referenced object that is required to be a particular BIA type must exist in the metadata and have an appropriate type.
 
 For datasets, specimen imaging preparation protocols, image acquisition protocols, annotation methods and signal channels, `@id` must be a relative IRI, such as `#dataset-1` or `protocols/preparation`. Absolute IRIs and blank-node identifiers such as `_:dataset-1` are not accepted for those entities by this profile. Other entities retain the identifier rules of the existing models.
 
@@ -46,15 +46,15 @@ The single study has `@id` `./` and includes the types `Dataset` and `bia:Study`
 
 | Property | Requirement | Details |
 | --- | --- | --- |
-| `name` | Required | Study title. |
-| `description` | Required | Description of the study. |
+| `name` | Required by the existing model | Study title. |
+| `description` | Required by the existing model | Description of the study. |
 | `license` | Required | Exactly `https://creativecommons.org/publicdomain/zero/1.0/` or `https://creativecommons.org/licenses/by/4.0/`. |
 | `datePublished` | Required by the existing model | Uses the existing model's date validation; v0 adds no placeholder rule. |
 | `accessionId` | Required by the existing model | Uses the existing model's string validation; v0 adds no placeholder or non-empty constraint. |
-| `hasPart` | Required | References all BIA datasets and the file list. |
-| `author` | Required | At least one reference to a `bia:Contributor`. |
-| `relatedPublication` | Recommended | References to `bia:Publication` entities. |
-| `acknowledgement`, `keywords`, `funding`, `seeAlso` | Recommended | Describe acknowledgements, keywords, funding and related resources. |
+| `hasPart` | Required | Directly references at least one BIA dataset and the file list. |
+| `author` | Required by the existing model | At least one object reference. |
+| `relatedPublication` | Optional | Publication references. |
+| `acknowledgement`, `keywords`, `funding`, `seeAlso` | Optional | Describe acknowledgements, keywords, funding and related resources. |
 | `doi` | Optional | A non-null value does not receive an additional v0 warning or error. |
 
 ## Datasets
@@ -91,27 +91,21 @@ The model uses `pubmedId` for a publication. `methodType`, `imagingMethodName` a
 
 ## File list
 
-`file_list.tsv` is tab-separated. Its first column must be named either `filepath` or `file_path`. It must also contain `dataset` and `type` columns. Every column in the TSV, including additional columns, must have a `csvw:Column` definition linked through the file list's table schema.
+`file_list.tsv` is tab-separated. Its first column can have any name but must have property URL `http://bia/filePath`. It must also contain `dataset` and `type` columns. Every column in the TSV, including additional columns, must have a `csvw:Column` definition linked through the file list's table schema.
 
 | Column | Required `propertyUrl` in its column definition | Purpose |
 | --- | --- | --- |
-| `filepath` or `file_path` | `http://bia/filePath` | Relative path or filename of the listed file. |
+| First column (any name) | `http://bia/filePath` | Relative path or filename of the listed file. |
 | `dataset` | `http://schema.org/isPartOf` | Reference to a BIA dataset in the RO-Crate metadata. |
 | `type` | `http://www.w3.org/1999/02/22-rdf-syntax-ns#type` | Type of the listed file. |
 
-The `type` value must be one of these **full IRIs**:
+The profile does not impose an allow-list on `type` values. The specific image checks described below and in the datasets section still use `http://bia/Image` to identify images.
 
-| Value | Use |
-| --- | --- |
-| `http://bia/Image` | Image file, including an image annotation. |
-| `http://bia/AnnotationData` | Annotation data that is not an image. |
-| `http://bia/File` | Other supporting file. |
-
-The inherited minimal checks include uniqueness of file paths and validation of recognized references to metadata entities and other file-list rows. They check dataset references that are supplied; the additional v0 check ensures that each dataset is represented by at least one row.
+Base checks include uniqueness of file paths and validation of recognized references to metadata entities and other file-list rows. They check dataset references that are supplied; the additional v0 check ensures that each dataset is represented by at least one row.
 
 ### Source images and labels
 
-If any dataset references an annotation method, the TSV must have a column named `source image`, `source_image`, or `associated_source_image`, whose column definition has `propertyUrl` `http://bia/associatedSourceImage`.
+If any dataset references an annotation method, the TSV must have a column whose definition has `propertyUrl` `http://bia/associatedSourceImage`. The column name is unrestricted.
 
 When a source-image value is supplied, the inherited reference check resolves it against file paths or labels in the file list. A value may contain a single reference or a bracketed, comma-separated list of references. A missing target, or a target whose type is not `http://bia/Image`, is an error. The profile does not currently infer which rows must contain a source-image value.
 
@@ -126,4 +120,4 @@ A `label` column can group files that together represent an image. Labels do not
 
 ## Versioning
 
-`bia-submission-v0` names this set of submission checks. The `minimal` profile remains separately selectable and is the default. Future submission requirements can be introduced under a new versioned profile identifier.
+`bia-submission-v0` names this set of submission checks. Base validation is always applied, and no profile is selected by default. Future submission requirements can be introduced under a new versioned profile identifier.

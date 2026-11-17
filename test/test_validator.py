@@ -16,7 +16,7 @@ def get_test_ro_crate_path(accession_id, test_folder="validator") -> Path:
     return Path(__file__).parent / test_folder / "input_ro_crate" / accession_id
 
 
-@pytest.mark.parametrize("profile", [None, "minimal", "bia-submission-v0"])
+@pytest.mark.parametrize("profile", [None, "bia-submission-v0"])
 @pytest.mark.parametrize(
     "accession_id,expected_result,messages",
     [

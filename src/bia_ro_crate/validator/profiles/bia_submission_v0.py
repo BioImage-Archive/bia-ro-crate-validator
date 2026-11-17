@@ -81,6 +81,16 @@ class SubmissionChecks:
         return self.issues
 
     def check_metadata(self):
+        self.check_study_and_dataset_counts()
+        self.check_local_identifiers()
+        self.check_file_list_metadata()
+        self.check_studies()
+        self.check_datasets()
+        self.check_entity_fields()
+        self.check_entity_references()
+        self.check_contributors()
+
+    def check_study_and_dataset_counts(self):
         studies = list(self.by_type[models.Study].values())
         datasets = list(self.by_type[models.Dataset].values())
         if len(studies) != 1:
@@ -88,6 +98,7 @@ class SubmissionChecks:
         if not datasets:
             self.issue("Expected at least one BIA dataset.")
 
+    def check_local_identifiers(self):
         for cls in (
             models.Dataset,
             models.SpecimenImagingPreparationProtocol,
@@ -112,6 +123,7 @@ class SubmissionChecks:
                         entity,
                     )
 
+    def check_file_list_metadata(self):
         file_list = self.metadata.get_file_list_entity()
         if file_list.id != "file_list.tsv":
             self.issue(
@@ -122,34 +134,26 @@ class SubmissionChecks:
         ) or not self.has_type(file_list, "http://www.w3.org/ns/csvw#Table"):
             self.issue("File list must also have types File and csvw:Table.", file_list)
 
+    def check_studies(self):
+        studies = self.by_type[models.Study].values()
+        dataset_ids = self.by_type[models.Dataset]
+        file_list = self.metadata.get_file_list_entity()
         for study in studies:
-            if not self.has_type(study, SCHEMA.Dataset):
-                self.issue("Study must also have type Dataset.", study)
-            self.check_fields(study, ("name", "description", "hasPart"))
             if str(study.license) not in (
                 "https://creativecommons.org/publicdomain/zero/1.0/",
                 "https://creativecommons.org/licenses/by/4.0/",
             ):
                 self.issue("Study license must be CC0 1.0 or CC BY 4.0.", study)
             included = {ref.id for ref in study.hasPart}
-            for entity in datasets + [file_list]:
-                if entity.id not in included:
-                    self.issue(f"Study hasPart must reference {entity.id}.", study)
-            self.check_refs(study, "author", models.Contributor)
-            self.check_refs(study, "relatedPublication", models.Publication)
-            self.check_fields(
-                study,
-                (
-                    "relatedPublication",
-                    "acknowledgement",
-                    "keywords",
-                    "funding",
-                    "seeAlso",
-                ),
-                Severity.WARNING,
-            )
+            if file_list.id not in included:
+                self.issue(f"Study hasPart must reference {file_list.id}.", study)
+            if not any(entity_id in dataset_ids for entity_id in included):
+                self.issue(
+                    "Study hasPart must reference at least one BIA dataset.", study
+                )
 
-        for dataset in datasets:
+    def check_datasets(self):
+        for dataset in self.by_type[models.Dataset].values():
             if not self.has_type(dataset, SCHEMA.Dataset):
                 self.issue("BIA dataset must also have type Dataset.", dataset)
             self.check_fields(dataset, ("name",))
@@ -173,6 +177,7 @@ class SubmissionChecks:
             ):
                 self.check_refs(dataset, field, expected)
 
+    def check_entity_fields(self):
         requirements = (
             (models.Publication, ("name",), ("doi", "pubmedId", "authorNames")),
             (
@@ -225,6 +230,8 @@ class SubmissionChecks:
             for entity in self.by_type[cls].values():
                 self.check_fields(entity, required)
                 self.check_fields(entity, recommended, Severity.WARNING)
+
+    def check_entity_references(self):
         for sample in self.by_type[models.BioSample].values():
             self.check_refs(sample, "organismClassification", models.Taxon)
             self.check_refs(
@@ -243,6 +250,8 @@ class SubmissionChecks:
             self.check_refs(
                 protocol, "signalChannelInformation", models.SignalChannelInformation
             )
+
+    def check_contributors(self):
         for contributor in self.by_type[models.Contributor].values():
             person = self.has_type(contributor, SCHEMA.Person)
             if not person and not self.has_type(contributor, SCHEMA.Organization):
@@ -270,10 +279,10 @@ class SubmissionChecks:
             for col in file_list.data.columns
         }
         names = list(columns)
-        if not names or names[0] not in ("filepath", "file_path"):
-            self.issue("The first file-list column must be 'filepath' or 'file_path'.")
-        elif columns[names[0]].propertyUrl != str(BIA.filePath):
-            self.issue("The filepath column must have propertyUrl http://bia/filePath.")
+        if not names or columns[names[0]].propertyUrl != str(BIA.filePath):
+            self.issue(
+                "The first file-list column must have propertyUrl http://bia/filePath."
+            )
         expected = {
             "dataset": str(SCHEMA.isPartOf),
             "type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
@@ -290,31 +299,20 @@ class SubmissionChecks:
             for dataset in self.by_type[models.Dataset].values()
         ):
             if not any(
-                name in columns
-                and columns[name].propertyUrl == str(BIA.associatedSourceImage)
-                for name in ("source image", "source_image", "associated_source_image")
+                column.propertyUrl == str(BIA.associatedSourceImage)
+                for column in columns.values()
             ):
                 self.issue(
-                    "An annotation dataset requires a 'source image', 'source_image', or 'associated_source_image' column with propertyUrl http://bia/associatedSourceImage."
+                    "An annotation dataset requires a file-list column with propertyUrl http://bia/associatedSourceImage."
                 )
         if not all(name in columns for name in expected):
             return
         datasets = file_list.data[columns["dataset"].id]
         types = file_list.data[columns["type"].id]
         dataset_rows, image_rows = Counter(), Counter()
-        for row_number, (dataset, file_type) in enumerate(
-            zip(datasets, types), start=2
-        ):
+        for dataset, file_type in zip(datasets, types):
             if not pd.isna(dataset):
                 dataset_rows[dataset] += 1
-            if pd.isna(file_type) or file_type not in (
-                str(BIA.Image),
-                str(BIA.AnnotationData),
-                "http://bia/File",
-            ):
-                self.issue(
-                    f"File-list row {row_number} has unsupported type '{'' if pd.isna(file_type) else file_type}'; expected http://bia/Image, http://bia/AnnotationData, or http://bia/File."
-                )
             if (
                 not pd.isna(file_type)
                 and file_type == str(BIA.Image)

@@ -1,0 +1,6 @@
+file_path	size_in_bytes	dataset	type	source_image
+images/image1.tif	16058445	#images	http://bia/Image	
+images/image2.tif	29084603	#images	http://bia/Image	
+masks/mask1.tif	90791	#masks	http://bia/Image	images/image1.tif
+masks/mask2.tif	78328	#masks	http://bia/Image	images/image2.tif
+annotations/annotation.json	454529	#annotations	http://bia/AnnotationData	images/image1.tif

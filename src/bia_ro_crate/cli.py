@@ -53,9 +53,9 @@ def validate_ro_crate(
     ],
     report_json: bool = False,
     profile: Annotated[
-        ValidationProfile,
-        typer.Option(help="Validation profile to apply."),
-    ] = ValidationProfile.minimal,
+        ValidationProfile | None,
+        typer.Option(help="Optional profile to apply after base validation."),
+    ] = None,
 ):
     if crate_path.is_file():
         crate_path = crate_path.parent

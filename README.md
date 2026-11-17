@@ -183,9 +183,8 @@ The more specific recommendations on Biological Imaging Metadata from the _'Reco
 
 ### Validation profiles
 
-`bia-ro-crate validate PATH` uses the `minimal` profile by default and retains
-the existing validation behaviour. To apply the additional, versioned BIA
-submission requirements, select the profile explicitly:
+`bia-ro-crate validate PATH` performs base validation. To apply the additional,
+versioned BIA submission requirements after base validation, select the profile:
 
 ```shell
 bia-ro-crate validate PATH --profile bia-submission-v0
@@ -196,21 +195,21 @@ See the [BIA submission profile v0](docs/profiles/bia-submission-v0.md) for the
 human-readable requirements and the scope of the implemented checks.
 
 The Python API accepts the same selection via the optional `profile` argument
-to `bia_roc_validation`. The JSON report has the same structure as the minimal
-profile. Required submission checks are reported as errors and recommended
+to `bia_roc_validation`. The JSON report has the same structure as for base
+validation. Required submission checks are reported as errors and recommended
 metadata as warnings. The profile checks file-list metadata and references; it
 does not compare the file list to the files on disk.
 
-The submission profile accepts `filepath` or `file_path` as the first column.
-For annotation datasets, it requires a `source image`, `source_image`, or
-`associated_source_image` column with property URL
-`http://bia/associatedSourceImage`. Existing minimal reference validation still
+The first file-list column must have property URL `http://bia/filePath`; its
+name is unrestricted. For annotation datasets, the profile requires a column
+with property URL `http://bia/associatedSourceImage`, regardless of its name.
+Existing base reference validation still
 applies: a source reference whose target is not `http://bia/Image` is an error.
 Controlled vocabulary membership for annotation method and source
 indicator values is not yet checked; the vocabulary values are not bundled.
 The conditional recommendation for signal-channel identifiers is deferred.
-The `type` column accepts only the full IRIs `http://bia/Image`,
-`http://bia/AnnotationData`, and `http://bia/File`. Datasets and the imaging,
+The profile does not restrict values in the required `type` column to an
+allow-list. Image-specific checks use `http://bia/Image`. Datasets and the imaging,
 preparation, annotation, and signal-channel entities must use relative IRIs;
 blank-node identifiers are not accepted for those entities in this profile.
 
