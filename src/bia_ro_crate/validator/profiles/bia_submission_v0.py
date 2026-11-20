@@ -20,13 +20,11 @@ class SubmissionChecks:
             BIA.associatedImagingPreparationProtocol
         ): "associatedSpecimenImagingPreparationProtocol",
         str(BIA.associatedProtocol): "associatedProtocol",
-        str(BIA.associatedCreationProcess): "associatedCreationProcess",
-        str(BIA.associatedSubject): "associatedSpecimen",
+        str(BIA.associatedCreationProcess): "associatedCreationProcess"
     }
     REQUIRED_IF_DATASET_HAS_ASSOCIATION = {
         str(BIA.associatedBiologicalEntity),
-        str(BIA.associatedImagingPreparationProtocol),
-        str(BIA.associatedSubject),
+        str(BIA.associatedImagingPreparationProtocol)
     }
 
     def __init__(self, submission: BIASubmissionMetadata):
@@ -190,14 +188,7 @@ class SubmissionChecks:
                 (imaging[1], models.SpecimenImagingPreparationProtocol),
                 (imaging[2], models.ImageAcquisitionProtocol),
                 ("associatedAnnotationMethod", models.AnnotationMethod),
-                (
-                    "associatedProtocol",
-                    (
-                        models.Protocol,
-                        models.AnnotationMethod,
-                        models.ImageAcquisitionProtocol,
-                        models.SpecimenImagingPreparationProtocol,
-                    ),
+                ("associatedProtocol",models.Protocol),
                 ),
             ):
                 self.check_refs(dataset, field, expected)
