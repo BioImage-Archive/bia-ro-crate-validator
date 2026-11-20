@@ -189,7 +189,6 @@ class SubmissionChecks:
                 (imaging[2], models.ImageAcquisitionProtocol),
                 ("associatedAnnotationMethod", models.AnnotationMethod),
                 ("associatedProtocol",models.Protocol),
-                ),
             ):
                 self.check_refs(dataset, field, expected)
 
