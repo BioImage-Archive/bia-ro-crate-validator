@@ -30,13 +30,13 @@ Required violations are reported as errors. Missing recommended properties are r
 
 ## Submission structure
 
-A submission contains `ro-crate-metadata.json` and a TSV file named `file_list.tsv`. The metadata must describe exactly one BIA study and one BIA file list, and at least one BIA dataset. The study is the root dataset of the RO-Crate, and its `hasPart` directly references the file list and at least one BIA dataset.
+A submission contains `ro-crate-metadata.json` and a TSV file named `file_list.tsv`. The metadata must describe exactly one BIA study and one BIA file list, and at least one BIA dataset apart from the study and file list. The study is the root dataset of the RO-Crate, and its `hasPart` directly references the file list and every BIA dataset.
 
 The file list entity has `@id` `file_list.tsv` and includes the types `File`, `bia:FileList`, and `csvw:Table`. It refers to a `csvw:Schema` whose `csvw:Column` entities define the file-list columns.
 
 Base checks apply, including the RO-Crate 1.1 checks, JSON-LD context and reference validation, model validation, and file-list reference checks. A referenced object that is required to be a particular BIA type must exist in the metadata and have an appropriate type.
 
-For datasets, specimen imaging preparation protocols, image acquisition protocols, annotation methods and signal channels, `@id` must be a relative IRI, such as `#dataset-1` or `protocols/preparation`. Absolute IRIs and blank-node identifiers such as `_:dataset-1` are not accepted for those entities by this profile. Other entities retain the identifier rules of the existing models.
+Datasets, specimen imaging preparation protocols, image acquisition protocols, annotation methods and signal channels can use relative IRIs or URLs as `@id` values. Blank-node identifiers such as `_:dataset-1` are not accepted for those entities by this profile. Other entities retain the identifier rules of the existing models.
 
 In the tables below, **required** and **recommended** refer to the corresponding checks when an entity of that type is present. Unless specified otherwise, optional properties follow the existing models. References are represented by objects such as `{"@id": "#sample-1"}`; reference collections use the forms supported by the relevant model.
 
@@ -51,7 +51,7 @@ The single study has `@id` `./` and includes the types `Dataset` and `bia:Study`
 | `license` | Required | Exactly `https://creativecommons.org/publicdomain/zero/1.0/` or `https://creativecommons.org/licenses/by/4.0/`. |
 | `datePublished` | Required by the existing model | Uses the existing model's date validation; v0 adds no placeholder rule. |
 | `accessionId` | Required by the existing model | Uses the existing model's string validation; v0 adds no placeholder or non-empty constraint. |
-| `hasPart` | Required | Directly references at least one BIA dataset and the file list. |
+| `hasPart` | Required | Directly references every BIA dataset and the file list. |
 | `author` | Required by the existing model | At least one object reference. |
 | `relatedPublication` | Optional | Publication references. |
 | `acknowledgement`, `keywords`, `funding`, `seeAlso` | Optional | Describe acknowledgements, keywords, funding and related resources. |
@@ -59,14 +59,14 @@ The single study has `@id` `./` and includes the types `Dataset` and `bia:Study`
 
 ## Datasets
 
-Each dataset includes the types `Dataset` and `bia:Dataset`, has a relative `@id`, and has a `name`. Its `description` is optional.
+Each dataset includes the types `Dataset` and `bia:Dataset`, has a non-blank-node `@id`, and has a `name`. Its `description` is optional.
 
-Each dataset must provide at least one of the following:
+At least one dataset in the submission must provide either:
 
 1. An `associatedAnnotationMethod` reference; or
 2. All three references: `associatedBiologicalEntity`, `associatedSpecimenImagingPreparationProtocol`, and `associatedImageAcquisitionProtocol`.
 
-Both options may be provided. The references must point respectively to `bia:AnnotationMethod`, `bia:BioSample`, `bia:SpecimenImagingPreparationProtocol`, and `bia:ImageAcquisitionProtocol` entities in the metadata. Empty collections do not satisfy a required association.
+Both options may be provided. Additional datasets can instead reference an `associatedProtocol` alone. The references must point respectively to `bia:AnnotationMethod`, `bia:BioSample`, `bia:SpecimenImagingPreparationProtocol`, and `bia:ImageAcquisitionProtocol` entities in the metadata. Empty collections do not satisfy a required association.
 
 Every dataset must be referenced by at least one row in the file list. A dataset with an `associatedImageAcquisitionProtocol` must have at least one row **in that dataset** whose type is `http://bia/Image`.
 
@@ -87,7 +87,7 @@ All entities must meet their existing model requirements, including an `@id` and
 
 The model uses `pubmedId` for a publication. `methodType`, `imagingMethodName` and `fbbiId` are lists of strings. The profile requires the latter three lists to be non-empty, but adds no URL-format check for `fbbiId`. Taxon identifiers follow the existing model's IRI validation; this profile does not restrict them to NCBI identifier formats.
 
-`organismClassification` references `bia:Taxon` entities. `signalChannelInformation` references `bia:SignalChannel` entities. When supplied, `growthProtocol` is an object reference to a `bia:Protocol` or a protocol subclass recognized by the bundled ontology. Contributor `memberOf` references an organization or `bia:Affiliation` entity.
+`organismClassification` references `bia:Taxon` entities. `signalChannelInformation` references `bia:SignalChannel` entities. When supplied, `growthProtocol` references a generic `bia:Protocol`; annotation, image acquisition and specimen preparation protocols are not accepted for this property. Contributor `memberOf` references an organization or `bia:Affiliation` entity.
 
 ## File list
 
@@ -103,13 +103,17 @@ The profile does not impose an allow-list on `type` values. The specific image c
 
 Base checks include uniqueness of file paths and validation of recognized references to metadata entities and other file-list rows. They check dataset references that are supplied; the additional v0 check ensures that each dataset is represented by at least one row.
 
+File-list columns must not use `associatedImageAcquisitionProtocol` or `associatedAnnotationMethod`; specify those associations on the dataset instead. When a row supplies an `associatedBiologicalEntity`, `associatedImagingPreparationProtocol`, `associatedProtocol`, `associatedCreationProcess` or `associatedSubject` value, its dataset must also reference that value. Source images are excluded from this dataset-membership check and are validated separately below.
+
+For `associatedBiologicalEntity`, `associatedImagingPreparationProtocol` and `associatedSubject`, if the column is present and a row's dataset has that association, the row must have a non-empty value. These checks use the columns' `propertyUrl`, irrespective of their names. Ingest treats a present file-list column as overriding the dataset value, including when a cell is empty.
+
 ### Source images and labels
 
 If any dataset references an annotation method, the TSV must have a column whose definition has `propertyUrl` `http://bia/associatedSourceImage`. The column name is unrestricted.
 
 When a source-image value is supplied, the inherited reference check resolves it against file paths or labels in the file list. A value may contain a single reference or a bracketed, comma-separated list of references. A missing target, or a target whose type is not `http://bia/Image`, is an error. The profile does not currently infer which rows must contain a source-image value.
 
-A `label` column can group files that together represent an image. Labels do not have to be unique, including across datasets. The existing source-reference lookup is not scoped by dataset: it checks labels before paths and, when labels repeat, uses the last matching label in the file list. Keep that behaviour in mind when choosing source references.
+Non-empty labels in a column with `propertyUrl` `http://schema.org/name` may repeat within a dataset to group files that form one image, but a label must not be reused across different datasets. A source reference may use a label or a path.
 
 ## Scope and deferred checks
 

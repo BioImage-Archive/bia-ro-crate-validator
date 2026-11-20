@@ -1,7 +1,6 @@
 """Additional BIA submission checks on a successfully parsed RO-Crate."""
 
 from collections import Counter
-from urllib.parse import urlsplit
 
 import pandas as pd
 
@@ -13,6 +12,23 @@ from bia_ro_crate.models.linked_data.ontology_terms import BIA, SCHEMA
 
 
 class SubmissionChecks:
+    # Ingest overrides these dataset associations with file-list values.
+    # Source images are deliberately excluded from this profile check for now.
+    ASSOCIATION_FIELDS = {
+        str(BIA.associatedBiologicalEntity): "associatedBiologicalEntity",
+        str(
+            BIA.associatedImagingPreparationProtocol
+        ): "associatedSpecimenImagingPreparationProtocol",
+        str(BIA.associatedProtocol): "associatedProtocol",
+        str(BIA.associatedCreationProcess): "associatedCreationProcess",
+        str(BIA.associatedSubject): "associatedSpecimen",
+    }
+    REQUIRED_IF_DATASET_HAS_ASSOCIATION = {
+        str(BIA.associatedBiologicalEntity),
+        str(BIA.associatedImagingPreparationProtocol),
+        str(BIA.associatedSubject),
+    }
+
     def __init__(self, submission: BIASubmissionMetadata):
         self.metadata = submission.metadata
         self.file_list = submission.file_list
@@ -82,7 +98,7 @@ class SubmissionChecks:
 
     def check_metadata(self):
         self.check_study_and_dataset_counts()
-        self.check_local_identifiers()
+        self.check_identifiers()
         self.check_file_list_metadata()
         self.check_studies()
         self.check_datasets()
@@ -98,7 +114,7 @@ class SubmissionChecks:
         if not datasets:
             self.issue("Expected at least one BIA dataset.")
 
-    def check_local_identifiers(self):
+    def check_identifiers(self):
         for cls in (
             models.Dataset,
             models.SpecimenImagingPreparationProtocol,
@@ -107,19 +123,9 @@ class SubmissionChecks:
             models.SignalChannelInformation,
         ):
             for entity in self.by_type[cls].values():
-                try:
-                    parts = urlsplit(entity.id)
-                    local = (
-                        bool(entity.id)
-                        and not entity.id.startswith("_:")
-                        and not parts.scheme
-                        and not parts.netloc
-                    )
-                except ValueError:
-                    local = False
-                if not local:
+                if entity.id.startswith("_:"):
                     self.issue(
-                        "Entity must have a relative IRI as its local identifier; absolute IRIs and blank-node identifiers are not allowed.",
+                        "Entity must not have a blank-node identifier.",
                         entity,
                     )
 
@@ -147,26 +153,36 @@ class SubmissionChecks:
             included = {ref.id for ref in study.hasPart}
             if file_list.id not in included:
                 self.issue(f"Study hasPart must reference {file_list.id}.", study)
-            if not any(entity_id in dataset_ids for entity_id in included):
-                self.issue(
-                    "Study hasPart must reference at least one BIA dataset.", study
-                )
+            for dataset_id in dataset_ids:
+                if dataset_id not in included:
+                    self.issue(f"Study hasPart must reference {dataset_id}.", study)
 
     def check_datasets(self):
-        for dataset in self.by_type[models.Dataset].values():
+        datasets = list(self.by_type[models.Dataset].values())
+        imaging = (
+            "associatedBiologicalEntity",
+            "associatedSpecimenImagingPreparationProtocol",
+            "associatedImageAcquisitionProtocol",
+        )
+
+        def has_primary_associations(dataset):
+            return bool(dataset.associatedAnnotationMethod) or all(
+                getattr(dataset, field) for field in imaging
+            )
+
+        if datasets and not any(
+            has_primary_associations(dataset) for dataset in datasets
+        ):
+            self.issue(
+                "At least one dataset must reference an annotation method, or a biosample, preparation protocol and acquisition protocol."
+            )
+        for dataset in datasets:
             if not self.has_type(dataset, SCHEMA.Dataset):
                 self.issue("BIA dataset must also have type Dataset.", dataset)
             self.check_fields(dataset, ("name",))
-            imaging = (
-                "associatedBiologicalEntity",
-                "associatedSpecimenImagingPreparationProtocol",
-                "associatedImageAcquisitionProtocol",
-            )
-            if not dataset.associatedAnnotationMethod and not all(
-                getattr(dataset, field) for field in imaging
-            ):
+            if not has_primary_associations(dataset) and not dataset.associatedProtocol:
                 self.issue(
-                    "Dataset must reference an annotation method, or a biosample, preparation protocol and acquisition protocol.",
+                    "Dataset must reference a protocol or an annotation method, or a biosample, preparation protocol and acquisition protocol.",
                     dataset,
                 )
             for field, expected in (
@@ -174,6 +190,15 @@ class SubmissionChecks:
                 (imaging[1], models.SpecimenImagingPreparationProtocol),
                 (imaging[2], models.ImageAcquisitionProtocol),
                 ("associatedAnnotationMethod", models.AnnotationMethod),
+                (
+                    "associatedProtocol",
+                    (
+                        models.Protocol,
+                        models.AnnotationMethod,
+                        models.ImageAcquisitionProtocol,
+                        models.SpecimenImagingPreparationProtocol,
+                    ),
+                ),
             ):
                 self.check_refs(dataset, field, expected)
 
@@ -237,12 +262,7 @@ class SubmissionChecks:
             self.check_refs(
                 sample,
                 "growthProtocol",
-                (
-                    models.Protocol,
-                    models.AnnotationMethod,
-                    models.ImageAcquisitionProtocol,
-                    models.SpecimenImagingPreparationProtocol,
-                ),
+                models.Protocol,
             )
         for protocol in self.by_type[
             models.SpecimenImagingPreparationProtocol
@@ -272,6 +292,58 @@ class SubmissionChecks:
                         contributor,
                     )
 
+    @staticmethod
+    def association_values(value):
+        if isinstance(value, list):
+            return [str(item) for item in value if item]
+        if not isinstance(value, str):
+            return [] if pd.isna(value) else [str(value)]
+        value = value.strip()
+        if not value:
+            return []
+        if value.startswith("["):
+            return [
+                item.strip().strip("\"'")
+                for item in value.strip("[] ").split(",")
+                if item.strip()
+            ]
+        return [value]
+
+    def check_file_list_associations(self, columns):
+        dataset_column = columns["dataset"].id
+        association_columns = [
+            (column, self.ASSOCIATION_FIELDS[column.propertyUrl])
+            for column in columns.values()
+            if column.propertyUrl in self.ASSOCIATION_FIELDS
+        ]
+        if not association_columns:
+            return
+        for row_number, (_, row) in enumerate(self.file_list.data.iterrows(), start=2):
+            dataset = self.by_type[models.Dataset].get(row[dataset_column])
+            if dataset is None:
+                continue
+            for column, field in association_columns:
+                refs = getattr(dataset, field)
+                allowed = (
+                    {ref.id for ref in refs}
+                    if isinstance(refs, list)
+                    else {refs.id} if refs else set()
+                )
+                values = self.association_values(row[column.id])
+                if (
+                    column.propertyUrl in self.REQUIRED_IF_DATASET_HAS_ASSOCIATION
+                    and allowed
+                    and not values
+                ):
+                    self.issue(
+                        f"File-list row {row_number} must provide {column.propertyUrl} because dataset {dataset.id} has that association."
+                    )
+                for value in values:
+                    if value not in allowed:
+                        self.issue(
+                            f"File-list row {row_number} references {value} via {column.propertyUrl}, but dataset {dataset.id} does not include that association."
+                        )
+
     def check_file_list(self):
         file_list = self.file_list
         columns = {
@@ -283,6 +355,14 @@ class SubmissionChecks:
             self.issue(
                 "The first file-list column must have propertyUrl http://bia/filePath."
             )
+        for column in columns.values():
+            if column.propertyUrl in (
+                str(BIA.associatedImageAcquisitionProtocol),
+                str(BIA.associatedAnnotationMethod),
+            ):
+                self.issue(
+                    f"File-list column '{column.columnName}' must not use propertyUrl {column.propertyUrl}; specify the association on the dataset."
+                )
         expected = {
             "dataset": str(SCHEMA.isPartOf),
             "type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
@@ -307,6 +387,26 @@ class SubmissionChecks:
                 )
         if not all(name in columns for name in expected):
             return
+        for column in columns.values():
+            if column.propertyUrl == str(SCHEMA.name):
+                labels_by_dataset = {}
+                for label, dataset in zip(
+                    file_list.data[column.id], file_list.data[columns["dataset"].id]
+                ):
+                    if (
+                        pd.isna(label)
+                        or label == ""
+                        or pd.isna(dataset)
+                        or dataset == ""
+                    ):
+                        continue
+                    labels_by_dataset.setdefault(label, set()).add(dataset)
+                for label, datasets in labels_by_dataset.items():
+                    if len(datasets) > 1:
+                        self.issue(
+                            f"File-list label '{label}' must not be shared across datasets."
+                        )
+        self.check_file_list_associations(columns)
         datasets = file_list.data[columns["dataset"].id]
         types = file_list.data[columns["type"].id]
         dataset_rows, image_rows = Counter(), Counter()

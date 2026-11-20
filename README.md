@@ -205,12 +205,16 @@ name is unrestricted. For annotation datasets, the profile requires a column
 with property URL `http://bia/associatedSourceImage`, regardless of its name.
 Existing base reference validation still
 applies: a source reference whose target is not `http://bia/Image` is an error.
+Acquisition-protocol and annotation-method associations belong on datasets, not
+in file-list columns. Biosample and specimen association columns must be filled
+for rows whose datasets have the corresponding association. Labels may repeat
+within a dataset, but not across datasets.
 Controlled vocabulary membership for annotation method and source
 indicator values is not yet checked; the vocabulary values are not bundled.
 The conditional recommendation for signal-channel identifiers is deferred.
 The profile does not restrict values in the required `type` column to an
 allow-list. Image-specific checks use `http://bia/Image`. Datasets and the imaging,
-preparation, annotation, and signal-channel entities must use relative IRIs;
+preparation, annotation, and signal-channel entities may use relative IRIs or URLs;
 blank-node identifiers are not accepted for those entities in this profile.
 
 If you are not familiar with JSON-LD, there is a short introduction a the bottom of this readme.
