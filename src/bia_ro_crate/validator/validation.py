@@ -1,9 +1,12 @@
 import logging
 from enum import StrEnum
 from pathlib import Path
+from types import SimpleNamespace
 
+from bia_ro_crate.core.parser.base_parser import ValidationExceptionGroup
 from bia_ro_crate.core.parser.ro_crate_parser import ROCrateParser
 from bia_ro_crate.core.validation import Severity
+from bia_ro_crate.validator.profiles import ValidationProfile
 
 logger = logging.getLogger("__main__." + __name__)
 logging.getLogger().setLevel(logging.INFO)
@@ -36,9 +39,9 @@ def _report_issues(parser: ROCrateParser) -> dict[str, None | dict[str, list[dic
             highest_error_level = issue.severity
 
     report = {
-        "highest_error_level": str(highest_error_level)
-        if highest_error_level
-        else None,
+        "highest_error_level": (
+            str(highest_error_level) if highest_error_level else None
+        ),
         "issues": report_by_severity,
     }
 
@@ -48,15 +51,47 @@ def _report_issues(parser: ROCrateParser) -> dict[str, None | dict[str, list[dic
 def bia_roc_validation(
     ro_crate_directory: Path,
     validation_mode: ValidationResponseMode = ValidationResponseMode.error,
+    profile: ValidationProfile | str | None = None,
 ):
+    if profile is not None:
+        profile = ValidationProfile(profile)
     ro_crate_parser = ROCrateParser(ro_crate_directory)
+    profile_issues = []
+    validation_failed = False
 
     try:
-        ro_crate_parser.parse()
-        ro_crate_parser.result
-    except ExceptionGroup:
-        raise SystemExit(1)
+        try:
+            ro_crate_parser.parse()
+            submission = ro_crate_parser.result
+        except ValidationExceptionGroup:
+            validation_failed = True
+        except (OSError, ValueError, KeyError, UnicodeError) as exc:
+            if profile is None:
+                raise
+            from bia_ro_crate.core.validation.validation_error import ValidationError
+
+            profile_issues.append(
+                ValidationError(
+                    message=f"Unable to parse the submission: {exc}",
+                    severity=Severity.ERROR,
+                )
+            )
+            validation_failed = True
+
+        if not validation_failed and profile == ValidationProfile.bia_submission_v0:
+            from bia_ro_crate.validator.profiles.bia_submission_v0 import (
+                SubmissionChecks,
+            )
+
+            profile_issues = SubmissionChecks(submission).run()
+            validation_failed = any(
+                issue.severity >= Severity.ERROR for issue in profile_issues
+            )
     finally:
-        _log_issues(ro_crate_parser)
-        if validation_mode == ValidationResponseMode.report:
-            return _report_issues(ro_crate_parser)
+        issues = SimpleNamespace(issues=ro_crate_parser.issues + profile_issues)
+        _log_issues(issues)
+
+    if validation_mode == ValidationResponseMode.report:
+        return _report_issues(issues)
+    if validation_failed:
+        raise SystemExit(1)

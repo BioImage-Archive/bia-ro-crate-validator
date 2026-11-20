@@ -6,6 +6,10 @@ from bia_ro_crate.core.validation.severity import Severity
 from bia_ro_crate.core.validation.validation_error import ValidationError
 
 
+class ValidationExceptionGroup(ExceptionGroup):
+    """Validation errors recorded by a parser."""
+
+
 class Parser[ParsedType](ABC):
     """Generic parser for any kind of file needed to be parsed in an ro-crate."""
 
@@ -42,4 +46,4 @@ class Parser[ParsedType](ABC):
             e.to_exception() for e in self._parse_issues if e.severity is Severity.ERROR
         ]
         if len(fatal_errors) > 0:
-            raise ExceptionGroup("Validation failed.", fatal_errors)
+            raise ValidationExceptionGroup("Validation failed.", fatal_errors)
