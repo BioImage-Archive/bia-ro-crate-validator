@@ -66,7 +66,7 @@ At least one dataset in the submission must provide either:
 1. An `associatedAnnotationMethod` reference; or
 2. All three references: `associatedBiologicalEntity`, `associatedSpecimenImagingPreparationProtocol`, and `associatedImageAcquisitionProtocol`.
 
-Both options may be provided. Additional datasets can instead reference an `associatedProtocol` alone. The references must point respectively to `bia:AnnotationMethod`, `bia:BioSample`, `bia:SpecimenImagingPreparationProtocol`, and `bia:ImageAcquisitionProtocol` entities in the metadata. Empty collections do not satisfy a required association.
+Both options may be provided. There can be more than one such dataset. There can also be additional datasets referencing an `associatedProtocol` instead if the other options are not appropriate (e.g. cryo-ET tomograms). The references must point respectively to `bia:AnnotationMethod`, `bia:BioSample`, `bia:SpecimenImagingPreparationProtocol`, and `bia:ImageAcquisitionProtocol` entities in the metadata. Empty collections do not satisfy a required association.
 
 Every dataset must be referenced by at least one row in the file list. A dataset with an `associatedImageAcquisitionProtocol` must have at least one row **in that dataset** whose type is `http://bia/Image`.
 
@@ -85,7 +85,7 @@ All entities must meet their existing model requirements, including an `@id` and
 | Image acquisition protocol, `bia:ImageAcquisitionProtocol` | `name`, `description`, `imagingInstrumentDescription`, `imagingMethodName`, `fbbiId` | — |
 | Annotation method, `bia:AnnotationMethod` | `name`, `description`, `methodType` | `annotationCriteria`, `annotationCoverage`, `annotationSourceIndicator` |
 
-The model uses `pubmedId` for a publication. `methodType`, `imagingMethodName` and `fbbiId` are lists of strings. The profile requires the latter three lists to be non-empty, but adds no URL-format check for `fbbiId`. Taxon identifiers follow the existing model's IRI validation; this profile does not restrict them to NCBI identifier formats.
+The model uses `pubmedId` for a publication. `methodType`, `imagingMethodName` and `fbbiId` are lists of strings. The current profile validation doesn't do URL-format check for `fbbiId` yet. Please use NCBI taxon for `bia:Taxon` even though the current restrictions to NCBI identifier formats hasn't been implemented in the profile validation yet.
 
 `organismClassification` references `bia:Taxon` entities. `signalChannelInformation` references `bia:SignalChannel` entities. When supplied, `growthProtocol` references a generic `bia:Protocol`; annotation, image acquisition and specimen preparation protocols are not accepted for this property. Contributor `memberOf` references an organization or `bia:Affiliation` entity.
 
@@ -99,21 +99,22 @@ The model uses `pubmedId` for a publication. `methodType`, `imagingMethodName` a
 | `dataset` | `http://schema.org/isPartOf` | Reference to a BIA dataset in the RO-Crate metadata. |
 | `type` | `http://www.w3.org/1999/02/22-rdf-syntax-ns#type` | Type of the listed file. |
 
-The profile does not impose an allow-list on `type` values. The specific image checks described below and in the datasets section still use `http://bia/Image` to identify images.
+The profile does not impose an allow-list on `type` values. Please use `http://bia/Image` for images and images that are annotations such as segmentation masks, `http://bia/AnnotationData` for annotation files that are not images, and `http://bia/File` for other type of files.
 
 Base checks include uniqueness of file paths and validation of recognized references to metadata entities and other file-list rows. They check dataset references that are supplied; the additional v0 check ensures that each dataset is represented by at least one row.
 
-File-list columns must not use `associatedImageAcquisitionProtocol` or `associatedAnnotationMethod`; specify those associations on the dataset instead. When a row supplies an `associatedBiologicalEntity`, `associatedImagingPreparationProtocol`, `associatedProtocol`, `associatedCreationProcess` or `associatedSubject` value, its dataset must also reference that value. Source images are excluded from this dataset-membership check and are validated separately below.
+File-list columns must not use `associatedImageAcquisitionProtocol`, `associatedAnnotationMethod` or `associatedSubject`; specify those associations on the dataset instead. When a row supplies an `associatedBiologicalEntity`, `associatedImagingPreparationProtocol`, `associatedProtocol` or `associatedCreationProcess` value, its dataset must also reference that value. Source images are excluded from this dataset-membership check and are validated separately below.
 
-For `associatedBiologicalEntity`, `associatedImagingPreparationProtocol` and `associatedSubject`, if the column is present and a row's dataset has that association, the row must have a non-empty value. These checks use the columns' `propertyUrl`, irrespective of their names. Ingest treats a present file-list column as overriding the dataset value, including when a cell is empty.
+For `associatedBiologicalEntity` and `associatedImagingPreparationProtocol`, if the column is present and a row's dataset has that association, the row must have a non-empty value. These checks use the columns' `propertyUrl`, irrespective of their names. A present file-list column will override the dataset value, including when a cell is empty.
 
 ### Source images and labels
 
-If any dataset references an annotation method, the TSV must have a column whose definition has `propertyUrl` `http://bia/associatedSourceImage`. The column name is unrestricted.
+If any dataset references an annotation method, the file list must have a column whose definition has `propertyUrl` `http://bia/associatedSourceImage`. The column name is not restricted.
 
-When a source-image value is supplied, the inherited reference check resolves it against file paths or labels in the file list. A value may contain a single reference or a bracketed, comma-separated list of references. A missing target, or a target whose type is not `http://bia/Image`, is an error. The profile does not currently infer which rows must contain a source-image value.
+Image Annotation files (e.g. segmentations, point annotations, ROIs) should be linked to their source image using the the source-image column which should list the path of the image that the annotation is made using. The values in the column are either: paths to source images, labels of the source images, or a square-bracket enclosed, comma separated, list of these, if there is more than one value. 
+When a source-image value is supplied, the inherited reference check resolves it against file paths or labels in the file list. A missing target, or a target whose type is not `http://bia/Image`, is an error. 
 
-Non-empty labels in a column with `propertyUrl` `http://schema.org/name` may repeat within a dataset to group files that form one image, but a label must not be reused across different datasets. A source reference may use a label or a path.
+If multiple files together represent a single image or should be converted into a single OME-Zarr object, the filelist must contain a label column. Label is a column with `propertyUrl` `http://schema.org/name`. Files belonging to the same image share a label. Labels must be unique within a dataset and must not be reused across datasets. 
 
 ## Scope and deferred checks
 
