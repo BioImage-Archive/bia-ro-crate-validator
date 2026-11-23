@@ -677,7 +677,6 @@ def test_type_column_is_required(submission):
         ),
         ("http://bia/associatedProtocol", "associatedProtocol", True),
         ("http://bia/associatedCreationProcess", "associatedCreationProcess", False),
-        ("http://bia/associatedSubject", "associatedSpecimen", False),
     ],
 )
 def test_row_associations_must_be_in_dataset(submission, property_iri, field, is_list):
@@ -717,9 +716,10 @@ def test_row_associations_must_be_in_dataset(submission, property_iri, field, is
     [
         "http://bia/associatedImageAcquisitionProtocol",
         "http://bia/associatedAnnotationMethod",
+        "http://bia/associatedSubject",
     ],
 )
-def test_acquisition_and_annotation_association_columns_are_forbidden(
+def test_acquisition_and_annotation_and_subject_association_columns_are_forbidden(
     submission, property_iri
 ):
     entities, profile_validate = submission
@@ -748,10 +748,9 @@ def test_acquisition_and_annotation_association_columns_are_forbidden(
             "associatedSpecimenImagingPreparationProtocol",
             True,
         ),
-        ("http://bia/associatedSubject", "associatedSpecimen", False),
     ],
 )
-def test_biosample_and_specimen_columns_require_values_when_dataset_has_association(
+def test_biosample_and_imaging_preparation_columns_require_values_when_dataset_has_association(
     submission, property_iri, field, is_list
 ):
     entities, profile_validate = submission
@@ -933,10 +932,13 @@ def typical_profile_crate(tmp_path):
     by_id["#Annotation%20Method"]["methodType"] = ["Other"]
     by_id["_:col4"]["columnName"] = "input_image"
     by_id["_:col4"]["propertyUrl"] = "http://bia/associatedSourceImage"
+    removed_columns = {"_:col5", "_:col6"}
     by_id["_:ts0"]["column"] = [
-        ref for ref in by_id["_:ts0"]["column"] if ref["@id"] != "_:col6"
+        ref for ref in by_id["_:ts0"]["column"] if ref["@id"] not in removed_columns
     ]
-    data["@graph"] = [entity for entity in data["@graph"] if entity["@id"] != "_:col6"]
+    data["@graph"] = [
+        entity for entity in data["@graph"] if entity["@id"] not in removed_columns
+    ]
     path_column = next(
         entity
         for entity in data["@graph"]
@@ -970,9 +972,10 @@ def typical_profile_crate(tmp_path):
     (tmp_path / "ro-crate-metadata.json").write_text(json.dumps(data))
     lines = (fixture / "file_list.tsv").read_text().splitlines()
     rows = [line.split("\t") for line in lines]
-    annotation_column = rows[0].index("associated_annotation_method")
-    for row in rows:
-        row.pop(annotation_column)
+    for name in ("associated_annotation_method", "associated_specimen"):
+        column_index = rows[0].index(name)
+        for row in rows:
+            row.pop(column_index)
     rows[0] = [
         name.replace("source_image_label", "input_image").replace(
             "file_path", "path_to_file"

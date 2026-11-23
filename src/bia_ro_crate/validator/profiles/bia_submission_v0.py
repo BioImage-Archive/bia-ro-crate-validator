@@ -349,6 +349,7 @@ class SubmissionChecks:
             if column.propertyUrl in (
                 str(BIA.associatedImageAcquisitionProtocol),
                 str(BIA.associatedAnnotationMethod),
+                str(BIA.associatedSubject)
             ):
                 self.issue(
                     f"File-list column '{column.columnName}' must not use propertyUrl {column.propertyUrl}; specify the association on the dataset."
