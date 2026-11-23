@@ -181,6 +181,42 @@ The more specific recommendations on Biological Imaging Metadata from the _'Reco
 
 ## Validation of BIA RO-Crates
 
+### Validation profiles
+
+`bia-ro-crate validate PATH` performs base validation. To apply the additional,
+versioned BIA submission requirements after base validation, select the profile:
+
+```shell
+bia-ro-crate validate PATH --profile bia-submission-v0
+bia-ro-crate validate PATH --profile bia-submission-v0 --report-json
+```
+
+See the [BIA submission profile v0](docs/profiles/bia-submission-v0.md) for the
+human-readable requirements and the scope of the implemented checks.
+
+The Python API accepts the same selection via the optional `profile` argument
+to `bia_roc_validation`. The JSON report has the same structure as for base
+validation. Required submission checks are reported as errors and recommended
+metadata as warnings. The profile checks file-list metadata and references; it
+does not compare the file list to the files on disk.
+
+The first file-list column must have property URL `http://bia/filePath`; its
+name is unrestricted. For annotation datasets, the profile requires a column
+with property URL `http://bia/associatedSourceImage`, regardless of its name.
+Existing base reference validation still
+applies: a source reference whose target is not `http://bia/Image` is an error.
+Acquisition-protocol, annotation-method and specimen associations belong on datasets, not
+in file-list columns. Biosample and specimen imaging preparation protocol association columns must be filled
+for rows whose datasets have the corresponding association. Labels may repeat
+within a dataset, but not across datasets.
+Controlled vocabulary membership for annotation method and source
+indicator values is not yet checked; the vocabulary values are not bundled.
+The conditional recommendation for signal-channel identifiers is deferred.
+The profile does not restrict values in the required `type` column to an
+allow-list. Image-specific checks use `http://bia/Image`. Datasets and the imaging,
+preparation, annotation, and signal-channel entities may use relative IRIs or URLs;
+blank-node identifiers are not accepted for those entities in this profile.
+
 If you are not familiar with JSON-LD, there is a short introduction a the bottom of this readme.
 
 ### JSON-LD validation
