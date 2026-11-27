@@ -12,8 +12,15 @@ class TSVMetadataParser(OSVMetadataParser):
 
         columns = self._get_schema()
 
-        data = pd.read_csv(self._file_list_path, delimiter="\t")
+        file_path_column = columns[self._file_path_column_id].columnName
+        data = pd.read_csv(
+            self._file_list_path,
+            delimiter="\t",
+            converters={file_path_column: lambda value: value},
+        )
 
+        self._validate_file_path_containment(data, columns)
+        self._validate_file_path_characters(data, columns)
         self._validate_unique_file_paths(data, columns)
 
         self._expand_list_columns(data, columns)

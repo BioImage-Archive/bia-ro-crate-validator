@@ -1,3 +1,5 @@
+import posixpath
+import re
 from pathlib import Path
 from urllib.parse import quote, unquote
 
@@ -15,6 +17,7 @@ from bia_ro_crate.models.linked_data.pydantic_ld.ROCrateModel import ROCrateMode
 
 
 class FileListParser(MetadataParser[FileList]):
+    FILE_PATH_PATTERN = re.compile(r"^[a-zA-Z0-9 !\-_.*'()/]+$")
     _ro_crate_metadata: BIAROCrateMetadata
     _file_list_id: str
     _file_list_path: Path
@@ -208,6 +211,60 @@ class FileListParser(MetadataParser[FileList]):
                     message="File list contains multiple references to the same file path.",
                 )
             )
+
+    def _validate_file_path_characters(
+        self, data: pd.DataFrame, columns: dict[str, ro_crate_models.Column]
+    ) -> None:
+        column_name = columns[self._file_path_column_id].columnName
+        for row_number, path in enumerate(data[column_name], start=2):
+            if not isinstance(path, str) or not path:
+                continue
+            if not self.FILE_PATH_PATTERN.fullmatch(path):
+                invalid_characters = dict.fromkeys(
+                    char for char in path if not self.FILE_PATH_PATTERN.fullmatch(char)
+                )
+                detail = "contains unsupported character(s): " + ", ".join(
+                    repr(char) for char in invalid_characters
+                )
+                self._parse_issues.append(
+                    ValidationError(
+                        severity=Severity.ERROR,
+                        location_description=f"In file list {self._file_list_id}, row {row_number}, column {column_name}",
+                        message=f"Invalid file path {path!r}: {detail}.",
+                    )
+                )
+            elif path.endswith("/"):
+                self._parse_issues.append(
+                    ValidationError(
+                        severity=Severity.ERROR,
+                        location_description=f"In file list {self._file_list_id}, row {row_number}, column {column_name}",
+                        message=f"Invalid file path {path!r}: the file path must not be a directory.",
+                    )
+                )
+
+    def _validate_file_path_containment(
+        self, data: pd.DataFrame, columns: dict[str, ro_crate_models.Column]
+    ) -> None:
+        column_name = columns[self._file_path_column_id].columnName
+        root = posixpath.abspath(str(self._ro_crate_root))
+        for row_number, path in enumerate(data[column_name], start=2):
+            detail = None
+            if not isinstance(path, str):
+                detail = "the path must be a string"
+            elif not path:
+                detail = "the path must not be empty"
+            else:
+                resolved_path = posixpath.abspath(posixpath.join(root, path))
+                if posixpath.commonpath((root, resolved_path)) != root:
+                    detail = "path resolves outside the RO-Crate directory"
+            if detail:
+                self._parse_issues.append(
+                    ValidationError(
+                        severity=Severity.ERROR,
+                        location_description=f"In file list {self._file_list_id}, row {row_number}, column {column_name}",
+                        message=f"Invalid file path {path!r}: {detail}.",
+                    )
+                )
 
     @staticmethod
     def _check_row_reference_and_type_against_roc_metadata(
